@@ -24,7 +24,7 @@ def general_conv(layer, is_training, architecture_conv, name="general_conv"):
                            name=(name+"_conv"+str(conv_iter)))
     return layer
 
-def Le_Net(X, is_training, class_num, batch_size, keep_prob=1.0, name="Le_Net"):
+def Le_Net(X, is_training, class_num, batch_size, name="Le_Net"):
     """
     This is the famous LeNet incarnation of the inception network.
     All the power is in the convs, so this is quite simple.
@@ -40,7 +40,7 @@ def Le_Net(X, is_training, class_num, batch_size, keep_prob=1.0, name="Le_Net"):
     layer = deconv2d_w_bias(layer, 4, class_num, batch_size, name=name+"_deconv")
     return layer
 
-def Alex_Net(X, is_training, class_num, batch_size, keep_prob=1.0, name="Alex_Net"):
+def Alex_Net(X, is_training, class_num, batch_size, name="Alex_Net"):
     """
     This is the famous AlexNet incarnation of the inception network.
     All the power is in the convs, so this is quite simple.
@@ -73,9 +73,9 @@ def inceptionv1_module(layer, is_training, kSize=[16,16,16,16,16,16], name="ince
     layer_5x5b = conv2d_bn_relu(layer_5x5a, is_training, 5, kSize[4], name=(name+"_5x5b"))
     layer_poola = max_pool(layer, k=3, stride=1)
     layer_poolb = conv2d_bn_relu(layer_poola, is_training, 1, kSize[5], name=(name+"_poolb"))
-    return tf.concat(3, [layer_1x1, layer_3x3b, layer_5x5b, layer_poolb])
+    return tf.concat([layer_1x1, layer_3x3b, layer_5x5b, layer_poolb], 3)
 
-def GoogLe_Net(X, is_training, class_num, batch_size, keep_prob=1.0, name="GoogLe_Net"):
+def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     """
     This is the famous GoogLeNet incarnation of the inception network.
     All the power is in the convs, so this is quite simple.

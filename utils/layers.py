@@ -34,6 +34,12 @@ def deconv2d_w_bias(layer, stride, class_num, batch_size, name="deconv2d_w_bias"
     - batch_size: (int) the explicit batch size
     - name: (string) unique name for this convolution layer
     """
+    layer = deconv2d_wo_bias(layer, stride, class_num, batch_size, name=name)
+    with tf.device("/cpu:0"):
+        with tf.variable_scope(name+"_param"):
+            B = tf.get_variable("B", class_num, initializer=tf.constant_initializer(0.0))
+    layer += B
+    return layer
     
 
 def conv2d_wo_bias(layer, filt_size, filt_num, stride=1, name="conv2d_wo_bias"):
@@ -110,7 +116,7 @@ def batch_norm(layer, is_training, beta=0.0, gamma=1.0, decay=0.9, stddev=0.002,
         gamma = tf.get_variable('gamma', shape=[input_size[-1]],
                                 initializer=gamma_init)
         mov_mean = tf.get_variable('mov_mean', input_size[-1:],
-                                   initializer=tf.zeros_initializer, trainable=False)
+                                   initializer=tf.zeros_initializer(), trainable=False)
         mov_var = tf.get_variable('mov_var', input_size[-1:],
                                   initializer=tf.ones_initializer(), trainable=False)
     # Creating Functions
@@ -140,7 +146,7 @@ def conv2d_bn_relu(layer, is_training, filt_size, filt_num, stride=1, alpha=0.1,
     - name: (string) unique name for this convolution layer
     """
     # Doing the conv2d
-    layer = conv2d_wo_bias(layer, filt_size, filt_num, stride=1, name=name)
+    layer = conv2d_wo_bias(layer, filt_size, filt_num, stride=stride, name=name)
     # Normalization
     layer = batch_norm(layer, is_training, name=name)
     # ReLU
@@ -199,7 +205,7 @@ def dense_w_bias(layer, hidden_size, name="dense_w_bias"):
     - name: (string) unique name for layer.
     """
     # Do the Math
-    layer = (layer, hidden_size, name=name)
+    layer = dense_wo_bias(layer, hidden_size, name=name)
     with tf.device("/cpu:0"):
         with tf.variable_scope(name+"_param"):
             b = tf.get_variable("b", output_size, initializer=tf.constant_initializer(0.0))
@@ -219,7 +225,7 @@ def dense_bn_do_relu(layer, is_training, hidden_size, keep_prob, alpha=0.1, name
     - alpha: (float) Slope for leaky ReLU.  Set 0.0 for ReLU.
     - name: (string) unique name for layer.
     """
-    layer = (layer, hidden_size, name=name)
+    layer = dense_wo_bias(layer, hidden_size, name=name)
     # Batch Normalization
     layer = batch_norm(layer, is_training, name=name)
     # Dropout

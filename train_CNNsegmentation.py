@@ -16,7 +16,7 @@ def main(args):
     parser.add_argument("--pTrain", dest="path_train", type=str, default=None)
     parser.add_argument("--pVal", dest="path_validation", type=str, default=None)
     parser.add_argument("--pTest", dest="path_test", type=str, default=None)
-    parser.add_argument("--pModel", dest="path_model", type=str, defalt=None)
+    parser.add_argument("--pModel", dest="path_model", type=str, default=None)
     parser.add_argument("--pLog", dest="path_log", type=str, default=None)
     parser.add_argument("--pVis", dest="path_visualization", type=str, default=None)
 

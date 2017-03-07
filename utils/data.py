@@ -6,7 +6,6 @@ from os import listdir, remove, mkdir
 from os.path import isfile, join, isdir
 from pylab import *
 import scipy.misc
-from sklearn.cross_validation import train_test_split
 import tensorflow as tf
 import socket
 import sys
