@@ -1,0 +1,48 @@
+import tensorflow as tf
+
+from layers import *
+
+def inceptionv1_module(layer, is_training, kSize=[16,16,16,16,16,16], name="inceptionv1_module"):
+    """
+    So, this is the classical incept layer.
+    INPUTS:
+    - layer: (tensor.4d) input of size [batch_size, layer_width, layer_height, channels]
+    - is_training: (bool) are we in training size
+    - ksize: (array (6,)) [1x1, 3x3reduce, 3x3, 5x5reduce, 5x5, poolproj]
+    - name: (string) name of incept layer
+    """
+    layer_1x1 = conv2d_bn_relu(layer, is_training, 1, kSize[0], name=(name+"_1x1"))
+    layer_3x3a = conv2d_bn_relu(layer, is_training, 1, kSize[1], name=(name+"_3x3a"))
+    layer_3x3b = conv2d_bn_relu(layer_3x3a, is_training, 3, kSize[2], name=(name+"_3x3b"))
+    layer_5x5a = conv2d_bn_relu(layer, is_training, 1, kSize[3], name=(name+"_5x5a"))
+    layer_5x5b = conv2d_bn_relu(layer_5x5a, is_training, 5, kSize[4], name=(name+"_5x5b"))
+    layer_poola = max_pool(layer, k=3, stride=1)
+    layer_poolb = conv2d_bn_relu(layer_poola, is_training, 1, kSize[5], name=(name+"_poolb"))
+    return tf.concat(3, [layer_1x1, layer_3x3b, layer_5x5b, layer_poolb])
+
+def GoogLe_Net(X, is_training, class_num, keep_prob=1.0, name="GoogLe_Net"):
+    """
+    This is the famous GoogLeNet incarnation of the inception network.
+    All the power is in the convs, so this is quite simple.
+    INPUTS:
+    - X: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    bs,m,n,c = X.get_shape().as_list()
+    layer, layer14x14, layer7x7, W_conv1 = GoogLe_conv(X, is_training, b_name=name)
+    layer = tf.nn.dropout(layer, keep_prob)
+    with tf.device("/cpu:0"):
+        with tf.variable_scope("auto_encode"):
+            W7 = tf.get_variable("W7", [64, 64, 2, layer7x7.get_shape().as_list()[3]],
+                                initializer=tf.random_normal_initializer(stddev=0.01))
+            W14 = tf.get_variable("W14", [32, 32, 2, layer14x14.get_shape().as_list()[3]],
+                                initializer=tf.random_normal_initializer(stddev=0.01))
+    auto_encoder = tf.nn.conv2d_transpose(layer14x14, W14, [6,m,n,2], strides=[1,16,16,1], padding='SAME')
+    auto_encoder += tf.nn.conv2d_transpose(layer7x7, W7, [6,m,n,2], strides=[1,32,32,1], padding='SAME')
+    out = output(layer, output_size, name=name+"output")
+    out_extra = []
+    for i,output_extra_size in enumerate(output_extra):
+        out_extra.append(output(layer, output_extra_size, name=name+"output_"+str(i)))
+    return out, auto_encoder, out_extra, W_conv1
