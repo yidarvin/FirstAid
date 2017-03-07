@@ -1,0 +1,33 @@
+import argparse
+import sys
+
+from utils.segmentation import segmentor
+
+def main(args):
+    """
+    Main function to parse arguments.
+    INPUTS:
+    - args: (list of strings) command line arguments
+    """
+    # Reading command line arguments into parser.
+    parser = argparse.ArgumentParser(description = "Do CNN Segmentation.")
+
+    # Paths: arguments for filepath to misc.
+    parser.add_argument("--pTrain", dest="path_train", type=str, default=None)
+    parser.add_argument("--pTest", dest="path_test", type=str, default=None)
+    parser.add_argument("--pModel", dest="path_model", type=str, defalt=None)
+    parser.add_argument("--pLog", dest="path_log", type=str, default=None)
+    parser.add_argument("--pVis", dest="path_visualization", type=str, default=None)
+
+    # Experiment Specific Parameters (i.e. architecture)
+    parser.add_argument("--name", dest="name", type=str, default="noname")
+    parser.add_argument("--net", dest="network", type=str, default="GoogLe")
+    parser.add_argument("--nClass", dest="num_class", type=int, default=2)
+    
+    # Hyperparameters
+    parser.add_argument("--lr", dest="lr", type=float, default=0.01)
+    parser.add_argument("--l2", dest="l2", type=float, default=0.0000001)
+    parser.add_argument("--l1", dest="l1", type=float, default=0.0)
+
+if __name__ == '__main__':
+    main(sys.argv)
