@@ -84,21 +84,21 @@ def data_augment(data_iter, data_seg=None, rand_seed=None):
     add_rand = np.clip(np.random.randn() * 0.1, -.4, .4)
     # Rolling
     data_iter = np.roll(np.roll(data_iter, ox, 0), oy, 1)
-    if data_seg:
+    if np.any(data_seg):
         data_seg = np.roll(np.roll(data_seg, ox, 0), oy, 1)
     # Left-right Flipping
     if do_flip:
         data_iter = np.fliplr(data_iter)
-        if data_seg:
+        if np.any(data_seg):
             data_seg = np.fliplr(data_seg)
     # Random 90 Degree Rotation
     data_iter = np.rot90(data_iter, num_rot)
-    if data_seg:
+    if np.any(data_seg):
         data_seg = np.rot90(data_seg, num_rot)
     # Raising/Lowering to a power
     data_iter = data_iter ** pow_rand
     # Random adding of shade.
     data_iter += add_rand
-    if data_seg:
+    if np.any(data_seg):
         return data_iter, data_seg
     return data_iter

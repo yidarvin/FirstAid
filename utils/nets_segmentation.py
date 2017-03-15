@@ -213,7 +213,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept1branch3c')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 32, name=name+'_incept1branchpool')
-    layer = tf.concat(3, [branch1x1, branch5x5, branch3x3, branchpool])
+    layer = tf.concat([branch1x1, branch5x5, branch3x3, branchpool], 3)
     # 28x28x256
     branch1x1 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept2branch1')
     branch5x5 = conv2d_bn_relu(layer, is_training, 1, 48, name=name+'_incept2branch5a')
@@ -223,7 +223,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept2branch3c')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 64, name=name+'_incept2branchpool')
-    layer = tf.concat(3, [branch1x1, branch5x5, branch3x3, branchpool])
+    layer = tf.concat([branch1x1, branch5x5, branch3x3, branchpool], 3)
     # 28x28x288
     branch1x1 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept3branch1')
     branch5x5 = conv2d_bn_relu(layer, is_training, 1, 48, name=name+'_incept3branch5a')
@@ -233,14 +233,14 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept3branch3c')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 64, name=name+'_incept3branchpool')
-    layer = tf.concat(3, [branch1x1, branch5x5, branch3x3, branchpool])
+    layer = tf.concat([branch1x1, branch5x5, branch3x3, branchpool], 3)
     # 28x28x288
     branch1x1 = conv2d_bn_relu(layer, is_training, 3, 384, stride=2, name=name+'_incept4branch1')
     branch3x3 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept4branch3a')
     branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept4branch3b')
     branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, stride=2, name=name+'_incept4branch3c')
     branchpool = max_pool(layer, k=3, stride=2)
-    layer = tf.concat(3, [branch1x1, branch3x3, branchpool])
+    layer = tf.concat([branch1x1, branch3x3, branchpool], 3)
     # 14x14x768
     branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept5branch1')
     branch7a = conv2d_bn_relu(layer, is_training, 1, 128, name=name+'_incept5branch7Aa')
@@ -253,7 +253,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept5branch7Be')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept5branchpool')
-    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    layer = tf.concat([branch1, branch7a, branch7b, branchpool], 3)
     # 14x14x768
     branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept6branch1')
     branch7a = conv2d_bn_relu(layer, is_training, 1, 160, name=name+'_incept6branch7Aa')
@@ -266,7 +266,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept6branch7Be')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept6branchpool')
-    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    layer = tf.concat([branch1, branch7a, branch7b, branchpool], 3)
     seg   = deconv2d_wo_bias(layer, 16, class_num, batch_size, name=name+"_incept6_deconv")
     # 14x14x768
     branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept7branch1')
@@ -280,7 +280,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept7branch7Be')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept7branchpool')
-    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    layer = tf.concat([branch1, branch7a, branch7b, branchpool], 3)
     # 14x14x768
     branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept8branch1')
     branch7a = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept8branch7Aa')
@@ -293,7 +293,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept8branch7Be')
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept8branchpool')
-    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    layer = tf.concat([branch1, branch7a, branch7b, branchpool], 3)
     # 14x14x768
     branch3x3 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept9branch3a')
     branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 320, stride=2, name=name+'_incept9branch3b')
@@ -302,31 +302,31 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branch7x7 = conv2d_bn_relu(branch7x7, is_training, [7, 1], 192, name=name+'_incept9branch7c')
     branch7x7 = conv2d_bn_relu(branch7x7, is_training, 3, 192, stride=2, name=name+'_incept9branch7d')
     branchpool = max_pool(layer, k=3, stride=2)
-    layer = tf.concat(3, [branch3x3, branch7x7, branchpool])
+    layer = tf.concat([branch3x3, branch7x7, branchpool], 3)
     # 7x7x1280
     branch1 = conv2d_bn_relu(layer, is_training, 1, 320, name=name+'_inceptAbranch1')
     branch3a = conv2d_bn_relu(layer, is_training, 1, 384, name=name+'_inceptAbranch3Aa')
-    branch3a = tf.concat(3, [conv2d_bn_relu(branch3a, is_training, [1, 3], 384, name=name+'_inceptAbranch3Ab'),
-                             conv2d_bn_relu(branch3a, is_training, [3, 1], 384, name=name+'_inceptAbranch3Ac')])
+    branch3a = tf.concat([conv2d_bn_relu(branch3a, is_training, [1, 3], 384, name=name+'_inceptAbranch3Ab'),
+                             conv2d_bn_relu(branch3a, is_training, [3, 1], 384, name=name+'_inceptAbranch3Ac')], 3)
     branch3b = conv2d_bn_relu(layer, is_training, 1, 448, name=name+'_inceptAbranch3Ba')
     branch3b = conv2d_bn_relu(branch3b, is_training, 3, 384, name=name+'_inceptAbranch3Bb')
-    branch3b = tf.concat(3, [conv2d_bn_relu(branch3b, is_training, [1, 3], 384, name=name+'_inceptAbranch3Bc'),
-                             conv2d_bn_relu(branch3b, is_training, [3, 1], 384, name=name+'_inceptAbranch3Bd')])
+    branch3b = tf.concat([conv2d_bn_relu(branch3b, is_training, [1, 3], 384, name=name+'_inceptAbranch3Bc'),
+                             conv2d_bn_relu(branch3b, is_training, [3, 1], 384, name=name+'_inceptAbranch3Bd')], 3)
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_inceptAbranchpool')
-    layer = tf.concat(3, [branch1, branch3a, branch3b, branchpool])
+    layer = tf.concat([branch1, branch3a, branch3b, branchpool], 3)
     # 7x7x2048
     branch1 = conv2d_bn_relu(layer, is_training, 1, 320, name=name+'_inceptBbranch1')
     branch3a = conv2d_bn_relu(layer, is_training, 1, 384, name=name+'_inceptBbranch3Aa')
-    branch3a = tf.concat(3, [conv2d_bn_relu(branch3a, is_training, [1, 3], 384, name=name+'_inceptBbranch3Ab'),
-                             conv2d_bn_relu(branch3a, is_training, [3, 1], 384, name=name+'_inceptBbranch3Ac')])
+    branch3a = tf.concat([conv2d_bn_relu(branch3a, is_training, [1, 3], 384, name=name+'_inceptBbranch3Ab'),
+                             conv2d_bn_relu(branch3a, is_training, [3, 1], 384, name=name+'_inceptBbranch3Ac')], 3)
     branch3b = conv2d_bn_relu(layer, is_training, 1, 448, name=name+'_inceptBbranch3Ba')
     branch3b = conv2d_bn_relu(branch3b, is_training, 3, 384, name=name+'_inceptBbranch3Bb')
-    branch3b = tf.concat(3, [conv2d_bn_relu(branch3b, is_training, [1, 3], 384, name=name+'_inceptBbranch3Bc'),
-                             conv2d_bn_relu(branch3b, is_training, [3, 1], 384, name=name+'_inceptBbranch3Bd')])
+    branch3b = tf.concat([conv2d_bn_relu(branch3b, is_training, [1, 3], 384, name=name+'_inceptBbranch3Bc'),
+                             conv2d_bn_relu(branch3b, is_training, [3, 1], 384, name=name+'_inceptBbranch3Bd')], 3)
     branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_inceptBbranchpool')
-    layer = tf.concat(3, [branch1, branch3a, branch3b, branchpool])
+    layer = tf.concat([branch1, branch3a, branch3b, branchpool], 3)
     seg   += deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_inceptB_deconv")
     return seg
 

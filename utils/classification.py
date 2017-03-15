@@ -152,7 +152,7 @@ class classifier:
                 with tf.name_scope('gpu%d' % i) as scope:
                     exec_statement = create_exec_statement_train(opts)
                     exec exec_statement
-                    loss = get_ce_loss(pred, multi_outputs[i], self.opts.num_class)
+                    loss = get_ce_loss(pred, multi_outputs[i])
                     loss_multi.append(loss)
                     cost = loss + self.L2_loss + self.L1_loss
 
@@ -192,16 +192,22 @@ class classifier:
         self.plot_accuracy.cla()
         self.plot_loss.cla()
 
-        self.plot_accuracy.plot(self.tr_acc)
+        self.plot_accuracy.plot(self.tr_acc, 'b')
         if self.val_acc:
-            self.plot_accuracy.plot(self.val_acc)
+            self.plot_accuracy.plot(self.val_acc, 'r')
         self.plot_accuracy.set_ylim([0,1])
+        self.plot_accuracy.set_xlabel('Epoch')
+        self.plot_accuracy.set_ylabel('Accuracy')
+        self.plot_accuracy.set_title('Accuracy')
 
-        self.plot_loss.plot(self.tr_loss)
+        self.plot_loss.plot(self.tr_loss, 'b')
         if self.val_loss:
-            self.plot_loss.plot(self.val_loss)
+            self.plot_loss.plot(self.val_loss, 'r')
         ymax = 2 * np.log(self.opts.num_class)
         self.plot_loss.set_ylim([0, ymax])
+        self.plot_loss.set_xlabel('Epoch')
+        self.plot_loss.set_ylabel('-log(P(correct_class))')
+        self.plot_loss.set_title('CrossEntropy Loss')
         
         if self.opts.path_visualization and save:
             path_save = join(self.opts.path_visualization, 'accuracy')
@@ -248,7 +254,7 @@ class classifier:
             data_iter = data_augment(data_iter)
             self.dataXX[iter_data,:,:,:] = data_iter
             self.dataYY[iter_data]   = data_label
-        feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY, self.keep_prob=self.opts.keep_prob}
+        feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY, self.keep_prob:self.opts.keep_prob}
         _, loss_iter, acc_iter = self.sess.run((self.optimizer, self.loss_multi, self.acc_multi), feed_dict=feed)
         return loss_iter, acc_iter
 
@@ -267,7 +273,7 @@ class classifier:
                     break
             except:
                 time.sleep(0.001)
-        feed = {self.xTe:dataXX, self.is_training:0, self.keep_prob=1.0}
+        feed = {self.xTe:dataXX, self.is_training:0, self.keep_prob:1.0}
         prob = self.sess.run((self.prob), feed_dict=feed)
         prob = prob[0]
         return prob
@@ -289,8 +295,8 @@ class classifier:
                     break
             except:
                 time.sleep(0.001)
-        feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY, self.keep_prob=1.0}
-        loss, acc = self.sess.run((self.seg_loss, self.acc), feed_dict=feed)
+        feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY, self.keep_prob:1.0}
+        loss, acc = self.sess.run((self.ce_loss, self.acc), feed_dict=feed)
         return loss, acc
 
     def test_all(self, path_X):
@@ -332,7 +338,7 @@ class classifier:
         else:
             self.sess.run(self.init)
         # Training
-        self.super_print("Let's start the trianing!")
+        self.super_print("Let's start the training!")
         for iter in range(self.iter_count):
             loss_temp, acc_temp = self.train_one_iter(iter)
             loss_tr += loss_temp / self.print_every
@@ -355,7 +361,6 @@ class classifier:
                     self.val_loss.append(loss_val)
                     self.val_acc.append(acc_val)
                     statement += " Loss_val: " + str(loss_val)
-                    statement += " IOU_val: " + str(iou_val)
                 if self.opts.bool_display:
                     self.super_graph()
                 if self.opts.path_model:

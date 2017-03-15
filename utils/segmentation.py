@@ -203,6 +203,9 @@ class segmentor:
         self.image_orig.imshow(img, cmap='bone')
         self.seg_pred.imshow(self.super_colormap(img, pred))
         self.seg_truth.imshow(self.super_colormap(img, truth))
+        self.image_orig.set_title('Original')
+        self.seg_pred.set_title('Prediction')
+        self.seg_truth.set_title('Ground Truth')
         if self.opts.path_visualization and save:
             path_save = join(self.opts.path_visualization, 'segmentation')
             if not isdir(path_save):
@@ -342,7 +345,7 @@ class segmentor:
         else:
             self.sess.run(self.init)
         # Training
-        self.super_print("Let's start the trianing!")
+        self.super_print("Let's start the training!")
         for iter in range(self.iter_count):
             loss_temp = self.train_one_iter(iter)
             loss_tr += loss_temp / self.print_every
@@ -384,16 +387,18 @@ class segmentor:
         start_time = time.time()
         loss_te = 0.0
         self.saver.restore(self.sess, self.opts.path_model)
-        for name_img in listdir(self.opts.path_inference):
-            if name_img[0] == '.':
-                continue
-            if name_img[-3:] != '.h5':
-                continue
-            path_file = join(self.opts.path_inference, name_img)
-            mask = self.inference_one_iter(path_file)
-            h5f = h5py.File(path_file, 'a')
-            h5f.create_dataset('seg_pred', data=mask)
-            h5f.close()
+        for name_folder in listdir(self.opts.path_inference):
+            path_imgs = join(self.opts.path_inference, name_folder)
+            for name_img in listdir(path_imgs):
+                if name_img[0] == '.':
+                    continue
+                if name_img[-3:] != '.h5':
+                    continue
+                path_file = join(path_imgs, name_img)
+                mask = self.inference_one_iter(path_file)
+                h5f = h5py.File(path_file, 'a')
+                h5f.create_dataset('seg_pred', data=mask)
+                h5f.close()
             
             
                 

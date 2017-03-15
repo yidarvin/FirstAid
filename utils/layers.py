@@ -208,7 +208,7 @@ def dense_w_bias(layer, hidden_size, name="dense_w_bias"):
     layer = dense_wo_bias(layer, hidden_size, name=name)
     with tf.device("/cpu:0"):
         with tf.variable_scope(name+"_param"):
-            b = tf.get_variable("b", output_size, initializer=tf.constant_initializer(0.0))
+            b = tf.get_variable("b", hidden_size, initializer=tf.constant_initializer(0.0))
     layer += b
     return layer
 

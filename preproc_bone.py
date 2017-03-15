@@ -4,12 +4,14 @@ from os import listdir, remove, mkdir
 from os.path import isfile, join, isdir
 import scipy.misc
 
-img_size = 512
+img_size = 224
 path_imgs = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/OriImages"
 path_masks = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/OriMask"
 path_inf = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/JonesBonesPart1C_PNG"
+path_label = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/Annotations_Labels"
+file_label = join(path_label, "Similarity_creteria.csv")
 
-path_save = "/home/dnr/Documents/data/bone-seg"
+path_save = "/home/dnr/Documents/data/bone"
 if not isdir(path_save):
     mkdir(path_save)
 path_train = join(path_save, "training")
@@ -21,6 +23,26 @@ if not isdir(path_validation):
     mkdir(path_validation)
 if not isdir(path_inference):
     mkdir(path_inference)
+path_inference = join(path_inference, "inference")
+if not isdir(path_inference):
+    mkdir(path_inference)
+
+counter = 1
+pat_to_lab = {}
+with open(file_label, 'r') as f:
+    line = f.readline()
+    line = f.readline()
+    while line != "":
+        line = line.split(',')
+        if line[1][0] == 'a':
+            label = 0
+        elif line[1][0] == 'i':
+            label = 1
+        else:
+            label = 2
+        pat_to_lab[str(counter)] = label
+        counter += 1
+        line = f.readline()
 
 list_imgs = listdir(path_imgs)
 for name_img in list_imgs:
@@ -29,6 +51,10 @@ for name_img in list_imgs:
     if name_img[-4:] != '.png':
         continue
     name_save = name_img[10:]
+    name_pat = name_save[:-4]
+    if name_pat not in pat_to_lab:
+        continue
+    label = pat_to_lab[name_pat]
     name_mask = "BJMaskOri" + name_img[10:]
     path_img = join(path_imgs, name_img)
     path_mask = join(path_masks, name_mask)
@@ -68,6 +94,7 @@ for name_img in list_imgs:
     h5f.create_dataset('height', data=height)
     h5f.create_dataset('width', data=width)
     h5f.create_dataset('depth', data=1)
+    h5f.create_dataset('label', data=label)
     h5f.close()
 
 list_imgs = listdir(path_inf)
