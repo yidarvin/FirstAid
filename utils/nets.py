@@ -24,36 +24,108 @@ def general_conv(layer, is_training, architecture_conv, name="general_conv"):
                            name=(name+"_conv"+str(conv_iter)))
     return layer
 
-def Le_Net(X, is_training, class_num, batch_size, name="Le_Net"):
+def Le_Net(layer, is_training, class_num, batch_size, name="Le_Net"):
     """
     This is the famous LeNet incarnation of the inception network.
     All the power is in the convs, so this is quite simple.
     INPUTS:
-    - X: (tensor.4d) input tensor.
+    - layer: (tensor.4d) input tensor.
     - output_size: (int) number of classes we're predicting
     - keep_prob: (float) probability to keep during dropout.
     - name: (str) the name of the network
     """
     architecture_conv = [[5,6],[0,2],
                          [5,16],[0,2]]
-    layer = general_conv(X, is_training, architecture_conv, name=name)
+    layer = general_conv(layer, is_training, architecture_conv, name=name)
     layer = deconv2d_w_bias(layer, 4, class_num, batch_size, name=name+"_deconv")
     return layer
 
-def Alex_Net(X, is_training, class_num, batch_size, name="Alex_Net"):
+def Alex_Net(layer, is_training, class_num, batch_size, name="Alex_Net"):
     """
     This is the famous AlexNet incarnation of the inception network.
     All the power is in the convs, so this is quite simple.
     INPUTS:
-    - X: (tensor.4d) input tensor.
+    - layer: (tensor.4d) input tensor.
     - output_size: (int) number of classes we're predicting
     - keep_prob: (float) probability to keep during dropout.
     - name: (str) the name of the network
     """
-    architecture_conv = [[11,96],[0,2],
+    architecture_conv = [[11,96,4],[0,2],
                          [11,256],[0,2],
                          [3,384],[3,384],[3,256],[0,2]]
-    layer = general_conv(X, is_training, architecture_conv, name=name)
+    layer = general_conv(layer, is_training, architecture_conv, name=name)
+    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    return layer
+
+def VGG11_Net(layer, is_training, class_num, batch_size, name="VGG11_Net"):
+    """
+    This is the 11-layer VGG Network.
+    INPUTS:
+    - layer: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    architecture_conv = [[3,64],[0,2],
+                         [3,128],[0,2],
+                         [3,256],[3,256],[0,2],
+                         [3,512],[3,512],[0,2],
+                         [3,512],[3,512],[0,2]]
+    layer = general_conv(layer, is_training, architecture_conv, name=name)
+    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    return layer
+
+def VGG13_Net(layer, is_training, class_num, batch_size, name="VGG13_Net"):
+    """
+    This is the 13-layer VGG Network.
+    INPUTS:
+    - layer: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    architecture_conv = [[3,64],[3,64],[0,2],
+                         [3,128],[3,128],[0,2],
+                         [3,256],[3,256],[0,2],
+                         [3,512],[3,512],[0,2],
+                         [3,512],[3,512],[0,2]]
+    layer = general_conv(layer, is_training, architecture_conv, name=name)
+    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    return layer
+
+def VGG16_Net(layer, is_training, class_num, batch_size, name="VGG16_Net"):
+    """
+    This is the 16-layer VGG Network.
+    INPUTS:
+    - layer: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    architecture_conv = [[3,64],[3,64],[0,2],
+                         [3,128],[3,128],[0,2],
+                         [3,256],[3,256],[3,256],[0,2],
+                         [3,512],[3,512],[3,512],[0,2],
+                         [3,512],[3,512],[3,512],[0,2]]
+    layer = general_conv(layer, is_training, architecture_conv, name=name)
+    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    return layer
+
+def VGG19_Net(layer, is_training, class_num, batch_size, name="VGG19_Net"):
+    """
+    This is the 19-layer VGG Network.
+    INPUTS:
+    - layer: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    architecture_conv = [[3,64],[3,64],[0,2],
+                         [3,128],[3,128],[0,2],
+                         [3,256],[3,256],[3,256],[3,256],[0,2],
+                         [3,512],[3,512],[3,512],[3,512],[0,2],
+                         [3,512],[3,512],[3,512],[3,512],[0,2]]
+    layer = general_conv(layer, is_training, architecture_conv, name=name)
     layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
     return layer
 
@@ -80,7 +152,7 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     This is the famous GoogLeNet incarnation of the inception network.
     All the power is in the convs, so this is quite simple.
     INPUTS:
-    - X: (tensor.4d) input tensor.
+    - layer: (tensor.4d) input tensor.
     - output_size: (int) number of classes we're predicting
     - keep_prob: (float) probability to keep during dropout.
     - name: (str) the name of the network
@@ -108,4 +180,200 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept5a")
     layer = inceptionv1_module(layer, is_training, kSize=[384,192,384,48,128,128], name=name+"_incept5b")
     seg   += deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_incept5b_deconv")
+    return seg
+
+def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_Net"):
+    """
+    This is the famous Inception v3 Network.
+    This is a big big fucking network.
+    INPUTS:
+    - layer: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    # 224x224x?
+    layer = conv2d_bn_relu(layer, is_training, 3, 32, stride=2, name=name+'_conv0')
+    # 112x112x32
+    layer = conv2d_bn_relu(layer, is_training, 3, 32, name=name+'_conv1')
+    # 112x112x32
+    layer = conv2d_bn_relu(layer, is_training, 3, 64, name=name+'_conv2')
+    layer = max_pool(layer, k=3, stride=2)
+    # 56x56x64
+    layer = conv2d_bn_relu(layer, is_training, 1, 80, name=name+'_conv3')
+    # 56x56x80
+    layer = conv2d_bn_relu(layer, is_training, 3, 192, name=name+'_conv4')
+    layer = max_pool(layer, k=3, stride=2)
+    # 28x28x192
+    branch1x1 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept1branch1')
+    branch5x5 = conv2d_bn_relu(layer, is_training, 1, 48, name=name+'_incept1branch5a')
+    branch5x5 = conv2d_bn_relu(branch5x5, is_training, 5, 64, name=name+'_incept1branch5b')
+    branch3x3 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept1branch3a')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept1branch3b')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept1branch3c')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 32, name=name+'_incept1branchpool')
+    layer = tf.concat(3, [branch1x1, branch5x5, branch3x3, branchpool])
+    # 28x28x256
+    branch1x1 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept2branch1')
+    branch5x5 = conv2d_bn_relu(layer, is_training, 1, 48, name=name+'_incept2branch5a')
+    branch5x5 = conv2d_bn_relu(branch5x5, is_training, 5, 64, name=name+'_incept2branch5b')
+    branch3x3 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept2branch3a')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept2branch3b')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept2branch3c')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 64, name=name+'_incept2branchpool')
+    layer = tf.concat(3, [branch1x1, branch5x5, branch3x3, branchpool])
+    # 28x28x288
+    branch1x1 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept3branch1')
+    branch5x5 = conv2d_bn_relu(layer, is_training, 1, 48, name=name+'_incept3branch5a')
+    branch5x5 = conv2d_bn_relu(branch5x5, is_training, 5, 64, name=name+'_incept3branch5b')
+    branch3x3 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept3branch3a')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept3branch3b')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept3branch3c')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 64, name=name+'_incept3branchpool')
+    layer = tf.concat(3, [branch1x1, branch5x5, branch3x3, branchpool])
+    # 28x28x288
+    branch1x1 = conv2d_bn_relu(layer, is_training, 3, 384, stride=2, name=name+'_incept4branch1')
+    branch3x3 = conv2d_bn_relu(layer, is_training, 1, 64, name=name+'_incept4branch3a')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, name=name+'_incept4branch3b')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 96, stride=2, name=name+'_incept4branch3c')
+    branchpool = max_pool(layer, k=3, stride=2)
+    layer = tf.concat(3, [branch1x1, branch3x3, branchpool])
+    # 14x14x768
+    branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept5branch1')
+    branch7a = conv2d_bn_relu(layer, is_training, 1, 128, name=name+'_incept5branch7Aa')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [1, 7], 128, name=name+'_incept5branch7Ab')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [7, 1], 192, name=name+'_incept5branch7Ac')
+    branch7b = conv2d_bn_relu(layer, is_training, 1, 128, name=name+'_incept5branch7Ba')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 128, name=name+'_incept5branch7Bb')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 128, name=name+'_incept5branch7Bc')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 128, name=name+'_incept5branch7Bd')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept5branch7Be')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept5branchpool')
+    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    # 14x14x768
+    branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept6branch1')
+    branch7a = conv2d_bn_relu(layer, is_training, 1, 160, name=name+'_incept6branch7Aa')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [1, 7], 160, name=name+'_incept6branch7Ab')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [7, 1], 192, name=name+'_incept6branch7Ac')
+    branch7b = conv2d_bn_relu(layer, is_training, 1, 128, name=name+'_incept6branch7Ba')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 160, name=name+'_incept6branch7Bb')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 160, name=name+'_incept6branch7Bc')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 160, name=name+'_incept6branch7Bd')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept6branch7Be')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept6branchpool')
+    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    seg   = deconv2d_wo_bias(layer, 16, class_num, batch_size, name=name+"_incept6_deconv")
+    # 14x14x768
+    branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept7branch1')
+    branch7a = conv2d_bn_relu(layer, is_training, 1, 160, name=name+'_incept7branch7Aa')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [1, 7], 160, name=name+'_incept7branch7Ab')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [7, 1], 192, name=name+'_incept7branch7Ac')
+    branch7b = conv2d_bn_relu(layer, is_training, 1, 128, name=name+'_incept7branch7Ba')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 160, name=name+'_incept7branch7Bb')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 160, name=name+'_incept7branch7Bc')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 160, name=name+'_incept7branch7Bd')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept7branch7Be')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept7branchpool')
+    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    # 14x14x768
+    branch1 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept8branch1')
+    branch7a = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept8branch7Aa')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [1, 7], 192, name=name+'_incept8branch7Ab')
+    branch7a = conv2d_bn_relu(branch7a, is_training, [7, 1], 192, name=name+'_incept8branch7Ac')
+    branch7b = conv2d_bn_relu(layer, is_training, 1, 128, name=name+'_incept8branch7Ba')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 192, name=name+'_incept8branch7Bb')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept8branch7Bc')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [7, 1], 192, name=name+'_incept8branch7Bd')
+    branch7b = conv2d_bn_relu(branch7b, is_training, [1, 7], 192, name=name+'_incept8branch7Be')
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_incept8branchpool')
+    layer = tf.concat(3, [branch1, branch7a, branch7b, branchpool])
+    # 14x14x768
+    branch3x3 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept9branch3a')
+    branch3x3 = conv2d_bn_relu(branch3x3, is_training, 3, 320, stride=2, name=name+'_incept9branch3b')
+    branch7x7 = conv2d_bn_relu(layer, is_training, 1, 192, name=name+'_incept9branch7a')
+    branch7x7 = conv2d_bn_relu(branch7x7, is_training, [1, 7], 192, name=name+'_incept9branch7b')
+    branch7x7 = conv2d_bn_relu(branch7x7, is_training, [7, 1], 192, name=name+'_incept9branch7c')
+    branch7x7 = conv2d_bn_relu(branch7x7, is_training, 3, 192, stride=2, name=name+'_incept9branch7d')
+    branchpool = max_pool(layer, k=3, stride=2)
+    layer = tf.concat(3, [branch3x3, branch7x7, branchpool])
+    # 7x7x1280
+    branch1 = conv2d_bn_relu(layer, is_training, 1, 320, name=name+'_inceptAbranch1')
+    branch3a = conv2d_bn_relu(layer, is_training, 1, 384, name=name+'_inceptAbranch3Aa')
+    branch3a = tf.concat(3, [conv2d_bn_relu(branch3a, is_training, [1, 3], 384, name=name+'_inceptAbranch3Ab'),
+                             conv2d_bn_relu(branch3a, is_training, [3, 1], 384, name=name+'_inceptAbranch3Ac')])
+    branch3b = conv2d_bn_relu(layer, is_training, 1, 448, name=name+'_inceptAbranch3Ba')
+    branch3b = conv2d_bn_relu(branch3b, is_training, 3, 384, name=name+'_inceptAbranch3Bb')
+    branch3b = tf.concat(3, [conv2d_bn_relu(branch3b, is_training, [1, 3], 384, name=name+'_inceptAbranch3Bc'),
+                             conv2d_bn_relu(branch3b, is_training, [3, 1], 384, name=name+'_inceptAbranch3Bd')])
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_inceptAbranchpool')
+    layer = tf.concat(3, [branch1, branch3a, branch3b, branchpool])
+    # 7x7x2048
+    branch1 = conv2d_bn_relu(layer, is_training, 1, 320, name=name+'_inceptBbranch1')
+    branch3a = conv2d_bn_relu(layer, is_training, 1, 384, name=name+'_inceptBbranch3Aa')
+    branch3a = tf.concat(3, [conv2d_bn_relu(branch3a, is_training, [1, 3], 384, name=name+'_inceptBbranch3Ab'),
+                             conv2d_bn_relu(branch3a, is_training, [3, 1], 384, name=name+'_inceptBbranch3Ac')])
+    branch3b = conv2d_bn_relu(layer, is_training, 1, 448, name=name+'_inceptBbranch3Ba')
+    branch3b = conv2d_bn_relu(branch3b, is_training, 3, 384, name=name+'_inceptBbranch3Bb')
+    branch3b = tf.concat(3, [conv2d_bn_relu(branch3b, is_training, [1, 3], 384, name=name+'_inceptBbranch3Bc'),
+                             conv2d_bn_relu(branch3b, is_training, [3, 1], 384, name=name+'_inceptBbranch3Bd')])
+    branchpool = tf.nn.avg_pool(layer, ksize=[1,3,3,1], strides=[1,1,1,1], padding='SAME')
+    branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_inceptBbranchpool')
+    layer = tf.concat(3, [branch1, branch3a, branch3b, branchpool])
+    seg   += deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_inceptB_deconv")
+    return seg
+
+def conv_res(layer, is_training, architecture=[[1, 64], [3, 64], [1, 256]], alpha=0.1, name="conv_res"):
+    """
+    This is going to be a residual layer.
+    We do 3 convolutions and add to the original input.
+    INPUTS:
+    - layer: (tensor.4d) input tensor
+    - is_training: (variable) whether or not we're training
+    - architecture: (list of lists) architecture of 3 convs
+    - alpha: (float) for the relu
+    - name: (string) name of the layer
+    """
+    l_input = layer #save for later
+    for iter_num, kSize in enumerate(architecture):
+        layer = batch_norm(layer, is_training, name=(name+'_bn'+str(iter_num)))
+        layer = tf.maximum(layer, layer*alpha)
+        layer = conv2d_wo_bias(layer, kSize[0], kSize[1], name=(name+"_conv2d"+str(iter_num)))
+    if l_input.get_shape().as_list()[3] != kSize[1]:
+        layer = tf.pad(l_input, [[0,0],[0,0],[0,0],[0,kSize[1]-l_input.get_shape().as_list()[3]]])
+    layer += l_input
+    return layer
+
+def Res_Net(layer, is_training, class_num, batch_size, name="Res_Net"):
+    """
+    This is the famous Res Net.
+    150+ Layers mother fucker!  Fuck that shit..
+    INPUTS:
+    - layer: (tensor.4d) input tensor.
+    - output_size: (int) number of classes we're predicting
+    - keep_prob: (float) probability to keep during dropout.
+    - name: (str) the name of the network
+    """
+    layer = conv2d_wo_bias(layer, 7, 64, stride=2, name=name+"_conv1")
+    layer = max_pool(layer, k=3, stride=2)
+    for i in range(3):
+        layer = conv_res(layer, is_training, architecture=[[1,64],[3,64],[1,256]], name=name+"_conv2_"+str(i))
+    layer = max_pool(layer, k=3, stride=2)
+    for i in range(8):
+        layer = conv_res(layer, is_training, architecture=[[1,128],[3,128],[1,512]], name=name+"_conv3_"+str(i))
+    layer = max_pool(layer, k=3, stride=2)
+    seg   = deconv2d_wo_bias(layer, 16, class_num, batch_size, name=name+"_covn4_deconv")
+    for i in range(36):
+        layer = conv_res(layer, is_training, architecture=[[1,256],[3,256],[1,1024]], name=name+"_conv4_"+str(i))
+    layer = max_pool(layer, k=3, stride=2)
+    for i in range(3):
+        layer = conv_res(layer, is_training, architecture=[[1,512],[3,512],[1,2048]], name=name+"_conv5_"+str(i))
+    seg   += deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_conv5_deconv")
     return seg
