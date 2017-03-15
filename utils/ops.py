@@ -32,6 +32,21 @@ def get_seg_loss(logits, labels, num_class):
     labels = tf.reshape(labels, [-1])
     return tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
 
+def get_ce_loss(logits, labels):
+    return tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+
+def get_accuracy(logits, labels):
+    """
+    Calculates accuracy of predictions.  Softmax based on largest.
+    INPUTS:
+    - logits: (tensor.2d) logit probability values.
+    - labels: (array of ints) basically, label \in {0,...,L-1}
+    """
+    pred_labels = tf.argmax(logits,1)
+    correct_pred = tf.equal(pred_labels, labels)
+    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+    return accuracy
+
 def get_optimizer(lr, decay, epoch_every):
     global_step = tf.Variable(0, trainable=False)
     starter_learning_rate = float(lr)

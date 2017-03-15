@@ -271,7 +271,7 @@ class segmentor:
                 time.sleep(0.001)
         feed = {self.xTe:dataXX, self.is_training:0}
         img = dataXX[0,:,:,0]
-        mask = self.sess.run((self.pred), feed_dict=feed)
+        mask = self.sess.run((self.prob), feed_dict=feed)
         mask = mask[0]
         mask = mask[:,:,1]
         rand = np.random.rand(mask.shape[0], mask.shape[1])
