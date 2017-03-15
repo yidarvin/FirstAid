@@ -13,7 +13,7 @@ import sys
 import time
 
 from layers import *
-from nets import *
+from nets_segmentation import *
 from data import *
 from ops import *
 
