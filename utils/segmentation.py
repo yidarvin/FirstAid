@@ -175,6 +175,15 @@ class segmentor:
 
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 
+    def average_iou(self, pred, truth):
+        img_pred = np.argmax(pred, axis=2)
+        iou = 0.0
+        for i in range(pred.shape[2]):
+            intersection = np.sum((img_pred == i) & (truth == i))
+            union = np.sum((img_pred == i) | (truth == i))
+            iou += float(intersection) / float(union) / pred.shape[2]
+        return iou
+    
     def super_colormap(self, img, cmap):
         img -= np.min(img)
         img /= np.max(img)
@@ -187,18 +196,18 @@ class segmentor:
         return_img[:,:,2] = 0.2*blue_chan + 0.8*img
         return return_img
     
-    def super_graph_seg(self, img, pred, truth, i=0):
+    def super_graph_seg(self, img, pred, truth, save=False, name='0'):
         self.image_orig.cla()
         self.seg_pred.cla()
         self.seg_truth.cla()
         self.image_orig.imshow(img, cmap='bone')
         self.seg_pred.imshow(self.super_colormap(img, pred))
         self.seg_truth.imshow(self.super_colormap(img, truth))
-        #if self.bool_movie:
-        #    path_save = join(self.path_movie, 'segmentation')
-        #    if not isdir(path_save):
-        #        mkdir(path_save)
-        #    self.f2.savefig(join(path_save, str(i) + '.png'))
+        if self.opts.path_visualization and save:
+            path_save = join(self.opts.path_visualization, 'segmentation')
+            if not isdir(path_save):
+                mkdir(path_save)
+            self.f1.savefig(join(path_save, name + '.png'))
         plt.pause(0.05)
         return 0
 
@@ -229,7 +238,6 @@ class segmentor:
         for iter_data, ind in enumerate(ind_list):
             img_filename = np.random.choice(listdir(join(self.opts.path_train, self.X_tr[ind])))
             while(True):
-                print join(self.opts.path_train, self.X_tr[ind], img_filename)
                 try:
                     with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
                         data_iter = np.array(hf.get('data'))
@@ -242,9 +250,84 @@ class segmentor:
             self.dataYY[iter_data,:,:]   = data_seg
         feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY}
         _, loss_iter,seg_example = self.sess.run((self.optimizer, self.loss_multi, self.segmentation_example), feed_dict=feed)
-        self.super_graph_seg(self.dataXX[0,:,:,0], seg_example[:,:,1], self.dataYY[0,:,:], i)
+        if self.opts.bool_display:
+            self.super_graph_seg(self.dataXX[0,:,:,0], seg_example[:,:,1], self.dataYY[0,:,:])
         return loss_iter
 
+    def inference_one_iter(self, path_file):
+        """
+        Does one forward pass and returns the segmentation.
+        INPUTS:
+        - self: (object)
+        - path_file: (str) path of the file to inference.
+        """
+        dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
+        while(True):
+            try:
+                with h5py.File(path_file) as hf:
+                    dataXX[0,:,:,:] = np.array(hf.get('data'))
+                    break
+            except:
+                time.sleep(0.001)
+        feed = {self.xTe:dataXX, self.is_training:0}
+        img = dataXX[0,:,:,0]
+        mask = self.sess.run((self.pred), feed_dict=feed)
+        mask = mask[0]
+        mask = mask[:,:,1]
+        rand = np.random.rand(mask.shape[0], mask.shape[1])
+        if self.opts.bool_display:
+            self.super_graph_seg(img, mask, rand)
+        return mask
+
+    def test_one_iter(self, path_file, name='0'):
+        """
+        Does one forward pass and returns the segmentation.
+        INPUTS:
+        - self: (object)
+        - path_file: (str) path of the file to inference.
+        """
+        dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
+        dataYY = np.zeros((1, self.matrix_size, self.matrix_size))
+        while(True):
+            try:
+                with h5py.File(path_file) as hf:
+                    dataXX[0,:,:,:] = np.array(hf.get('data'))
+                    dataYY[0,:,:]   = np.array(hf.get('seg'))
+                    break
+            except:
+                time.sleep(0.001)
+        feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY}
+        seg_loss, pred = self.sess.run((self.seg_loss, self.pred), feed_dict=feed)
+        iou = self.average_iou(pred[0], dataYY[0])
+        if self.opts.bool_display:
+            self.super_graph_seg(dataXX[0,:,:,0], pred[0,:,:,1], dataYY[0,:,:],
+                                 save=True, name=name)
+        return seg_loss, iou
+
+    def test_all(self, path_X):
+        """
+        Basically tests all the folders in path_X.
+        INPUTS:
+        - self: (object)
+        - path_X: (str) file path to the data.
+        """
+        # Initializing variables.
+        X_list = listdir(path_X)
+        iou_te  = 0.0
+        loss_te = 0.0
+        # Doing the testing.
+        for iter_data in range(len(X_list)):
+            # Reading in the data.
+            path_data_iter = join(path_X, X_list[iter_data])
+            files_data_iter = listdir(path_data_iter)
+            for file_data in files_data_iter:
+                path_file = join(path_data_iter, file_data)
+                loss_iter_iter, iou_iter_iter = self.test_one_iter(path_file, name=file_data)
+                loss_te += loss_iter_iter / len(files_data_iter) / len(X_list)
+                iou_te += iou_iter_iter / len(files_data_iter) / len(X_list)
+        return loss_te, iou_te
+        
+    
     def train_model(self):
         """
         Loads model and trains.
@@ -259,6 +342,58 @@ class segmentor:
         else:
             self.sess.run(self.init)
         # Training
+        self.super_print("Let's start the trianing!")
         for iter in range(self.iter_count):
             loss_temp = self.train_one_iter(iter)
             loss_tr += loss_temp / self.print_every
+            if ((iter)%self.print_every) == 0 or iter == self.iter_count-1:
+                if iter == 0:
+                    loss_tr *= self.print_every
+                current_time = time.time()
+                statement = "\t"
+                statement += "Iter: " + str(iter) + " "
+                statement += "Time: " + str((current_time - start_time) / 60) + " "
+                statement += "Loss_tr: " + str(loss_tr)
+                loss_tr = 0.0
+                if self.opts.path_validation:
+                    loss_val, iou_val = self.test_all(self.opts.path_validation)
+                    statement += " Loss_val: " + str(loss_val)
+                    statement += " IOU_val: " + str(iou_val)
+                if self.opts.path_model:
+                    self.saver.save(self.sess, self.opts.path_model)
+                self.super_print(statement)
+
+    def test_model(self):
+        """
+        Loads model and test.
+        """
+        if not self.opts.path_test:
+            return 0
+        # Initializing
+        start_time = time.time()
+        loss_te = 0.0
+        self.saver.restore(self.sess, self.opts.path_model)
+
+    def do_inference(self):
+        """
+        Loads model and does inference.
+        """
+        if not self.opts.path_inference:
+            return 0
+        # Initializing
+        start_time = time.time()
+        loss_te = 0.0
+        self.saver.restore(self.sess, self.opts.path_model)
+        for name_img in listdir(self.opts.path_inference):
+            if name_img[0] == '.':
+                continue
+            if name_img[-3:] != '.h5':
+                continue
+            path_file = join(self.opts.path_inference, name_img)
+            mask = self.inference_one_iter(path_file)
+            h5f = h5py.File(path_file, 'a')
+            h5f.create_dataset('seg_pred', data=mask)
+            h5f.close()
+            
+            
+                

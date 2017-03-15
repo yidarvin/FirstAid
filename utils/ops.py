@@ -37,5 +37,5 @@ def get_optimizer(lr, decay, epoch_every):
     starter_learning_rate = float(lr)
     learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
                                                epoch_every, decay, staircase=True)
-    optimizer = tf.train.AdamOptimizer(learning_rate)#tf.train.RMSPropOptimizer(learning_rate)#tf.train.AdamOptimizer(learning_rate)#
+    optimizer = tf.train.RMSPropOptimizer(learning_rate)#tf.train.AdamOptimizer(learning_rate)#
     return optimizer, global_step

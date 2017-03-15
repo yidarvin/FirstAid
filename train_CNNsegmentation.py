@@ -16,6 +16,7 @@ def main(args):
     parser.add_argument("--pTrain", dest="path_train", type=str, default=None)
     parser.add_argument("--pVal", dest="path_validation", type=str, default=None)
     parser.add_argument("--pTest", dest="path_test", type=str, default=None)
+    parser.add_argument("--pInf", dest="path_inference", type=str, default=None)
     parser.add_argument("--pModel", dest="path_model", type=str, default=None)
     parser.add_argument("--pLog", dest="path_log", type=str, default=None)
     parser.add_argument("--pVis", dest="path_visualization", type=str, default=None)
@@ -27,7 +28,7 @@ def main(args):
     parser.add_argument("--nGPU", dest="num_gpu", type=int, default=1)
     
     # Hyperparameters
-    parser.add_argument("--lr", dest="lr", type=float, default=0.01)
+    parser.add_argument("--lr", dest="lr", type=float, default=0.001)
     parser.add_argument("--dec", dest="lr_decay", type=float, default=1.0)
     parser.add_argument("--l2", dest="l2", type=float, default=0.0000001)
     parser.add_argument("--l1", dest="l1", type=float, default=0.0)
@@ -44,6 +45,7 @@ def main(args):
     CNN_obj = segmentor(opts)
     CNN_obj.train_model() #Train/Validate the Model
     CNN_obj.test_model() #Test the Model.
+    CNN_obj.do_inference() #Do inference on inference set.
 
     # We're done.
     return 0
