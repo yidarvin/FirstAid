@@ -11,7 +11,7 @@ path_masks = "/media/dnr/8EB49A21B49A0C39/data/DDSM-orig/masks"
 path_label = "/media/dnr/8EB49A21B49A0C39/data/DDSM-orig"
 file_label = join(path_label, "mass_case_description.csv")
 
-path_save = "/home/dnr/Documents/data/ddsm"
+path_save = "/home/dnr/Documents/data/ddsm-512"
 if not isdir(path_save):
     mkdir(path_save)
 path_train = join(path_save, "training")
