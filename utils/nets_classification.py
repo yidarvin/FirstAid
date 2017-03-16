@@ -189,6 +189,10 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, keep_prob=1.0, name="G
     # Incept5
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept5a")
     layer = inceptionv1_module(layer, is_training, kSize=[384,192,384,48,128,128], name=name+"_incept5b")
+    # Attention layer
+    attention = conv2d_w_bias(layer, 1, 1, stride=1, name=name+"_attention")
+    attention = tf.sigmoid(attention)
+    layer *= attention
     # Output
     size_pool = layer.get_shape().as_list()[1]
     layer = tf.nn.avg_pool(layer, ksize=[1,size_pool,size_pool,1], strides=[1,1,1,1], padding='VALID')

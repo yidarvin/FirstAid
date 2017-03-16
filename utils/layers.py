@@ -85,7 +85,7 @@ def conv2d_w_bias(layer, filt_size, filt_num, stride=1, name="conv2d_w_bias"):
     # Creating weights for bias.
     with tf.device("/cpu:0"):
         with tf.variable_scope(name+"_param"):
-            B = tf.get_variable('B', shape=[filt_num], initializer=tf.zeros_initializer)
+            B = tf.get_variable('B', shape=[filt_num], initializer=tf.zeros_initializer())
     layer = tf.nn.bias_add(layer, B)
     return layer
 
