@@ -11,7 +11,7 @@ path_inf = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/JonesBonesPart1C_PNG"
 path_label = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/Annotations_Labels"
 file_label = join(path_label, "Similarity_creteria.csv")
 
-path_save = "/home/dnr/Documents/data/bone-seg"
+path_save = "/home/dnr/Documents/data/bone"
 if not isdir(path_save):
     mkdir(path_save)
 path_train = join(path_save, "training")

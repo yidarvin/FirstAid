@@ -347,7 +347,7 @@ def conv_res(layer, is_training, architecture=[[1, 64], [3, 64], [1, 256]], alph
         layer = tf.maximum(layer, layer*alpha)
         layer = conv2d_wo_bias(layer, kSize[0], kSize[1], name=(name+"_conv2d"+str(iter_num)))
     if l_input.get_shape().as_list()[3] != kSize[1]:
-        layer = tf.pad(l_input, [[0,0],[0,0],[0,0],[0,kSize[1]-l_input.get_shape().as_list()[3]]])
+        l_input = tf.pad(l_input, [[0,0],[0,0],[0,0],[0,kSize[1]-l_input.get_shape().as_list()[3]]])
     layer += l_input
     return layer
 

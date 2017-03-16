@@ -362,9 +362,10 @@ class segmentor:
                     loss_val, iou_val = self.test_all(self.opts.path_validation)
                     statement += " Loss_val: " + str(loss_val)
                     statement += " IOU_val: " + str(iou_val)
-                if self.opts.path_model:
-                    self.saver.save(self.sess, self.opts.path_model)
                 self.super_print(statement)
+        if self.opts.path_model:
+            self.saver.save(self.sess, self.opts.path_model)
+                
 
     def test_model(self):
         """
