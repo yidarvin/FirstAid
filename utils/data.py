@@ -96,9 +96,9 @@ def data_augment(data_iter, data_seg=None, rand_seed=None):
     if np.any(data_seg):
         data_seg = np.rot90(data_seg, num_rot)
     # Raising/Lowering to a power
-    #data_iter = data_iter ** pow_rand
+    data_iter = data_iter ** pow_rand
     # Random adding of shade.
-    #data_iter += add_rand
+    data_iter += add_rand
     if np.any(data_seg):
         return data_iter, data_seg
     return data_iter
