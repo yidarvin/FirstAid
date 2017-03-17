@@ -4,14 +4,14 @@ from os import listdir, remove, mkdir
 from os.path import isfile, join, isdir
 import scipy.misc
 
-img_size = 512
+img_size = 1024
 path_imgs = "/media/dnr/8EB49A21B49A0C39/data/DDSM-orig/mammograms"
 path_masks = "/media/dnr/8EB49A21B49A0C39/data/DDSM-orig/masks"
 #path_inf = "/media/dnr/8EB49A21B49A0C39/data/bone-orig/JonesBonesPart1C_PNG"
 path_label = "/media/dnr/8EB49A21B49A0C39/data/DDSM-orig"
 file_label = join(path_label, "mass_case_description.csv")
 
-path_save = "/home/dnr/Documents/data/ddsm-512"
+path_save = "/home/dnr/Documents/data/ddsm-1024"
 if not isdir(path_save):
     mkdir(path_save)
 path_train = join(path_save, "training")
