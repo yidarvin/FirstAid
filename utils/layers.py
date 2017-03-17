@@ -131,7 +131,7 @@ def batch_norm(layer, is_training, beta=0.0, gamma=1.0, decay=0.9, stddev=0.002,
     inference = tf.nn.batch_normalization(layer, mean, var, beta, gamma, epsilon)
     return inference
 
-def conv2d_bn_relu(layer, is_training, filt_size, filt_num, stride=1, alpha=0.1, name="conv2d_bn_relu"):
+def conv2d_bn_relu(layer, is_training, filt_size, filt_num, stride=1, alpha=0.0, name="conv2d_bn_relu"):
     """
     A simple 2-dimensional convolution layer.
     Layer Architecture: 2d-convolution - batch_norm - reLU
@@ -212,7 +212,7 @@ def dense_w_bias(layer, hidden_size, name="dense_w_bias"):
     layer += b
     return layer
 
-def dense_bn_do_relu(layer, is_training, hidden_size, keep_prob, alpha=0.1, name="dense_bn_do_relu"):
+def dense_bn_do_relu(layer, is_training, hidden_size, keep_prob, alpha=0.0, name="dense_bn_do_relu"):
     """
     Dense (Fully Connected) layer.
     Architecture: reshape - Affine - batch_norm - dropout - relu
