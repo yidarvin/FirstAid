@@ -25,18 +25,18 @@ def create_exec_statement_test(opts):
     INPUTS:
     - opts: (object) command line arguments from argparser
     """
-    exec_statement = "self.pred, self.att = "
-    #self.pred, self.att =
+    exec_statement = "self.pred, self.seg, self.att = "
+    #self.pred, self.seg, self.att =
     exec_statement += opts.network
-    #self.pred, self.att = GoogLe
+    #self.pred, self.seg, self.att = GoogLe
     exec_statement += "_Net(self.xTe, self.is_training, "
-    #self.pred, self.att = GoogLe_Net(self.xTe, self.is_training,
+    #self.pred, self.seg, self.att = GoogLe_Net(self.xTe, self.is_training,
     exec_statement += str(opts.num_class)
-    #self.pred, self.att = GoogLe_Net(self.xTe, self.is_training, 2
+    #self.pred, self.seg, self.att = GoogLe_Net(self.xTe, self.is_training, 2
     exec_statement += ", 1"
-    #self.pred, self.att = GoogLe_Net(self.xTe, self.is_training, 2, 1
+    #self.pred, self.seg, self.att = GoogLe_Net(self.xTe, self.is_training, 2, 1
     exec_statement += ", self.keep_prob)"
-    #self.pred, self.att = GoogLe_Net(self.xTe, self.is_training, 2, 1, self.keep_prob)
+    #self.pred, self.seg, self.att = GoogLe_Net(self.xTe, self.is_training, 2, 1, self.keep_prob)
     return exec_statement
 
 def create_exec_statement_train(opts):
@@ -46,20 +46,20 @@ def create_exec_statement_train(opts):
     INPUTS:
     - opts: (object) command line arguments from argparser
     """
-    exec_statement = "pred,_ = "
-    #pred =
+    exec_statement = "pred,seg,att = "
+    #pred,seg,att =
     exec_statement += opts.network
-    #pred = GoogLe
+    #pred,seg,att = GoogLe
     exec_statement += "_Net(multi_inputs[i], self.is_training, "
-    #pred = GoogLe_Net(multi_inputs[i], self.is_training,
+    #pred,seg,att = GoogLe_Net(multi_inputs[i], self.is_training,
     exec_statement += str(opts.num_class)
-    #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2
+    #pred,seg,att = GoogLe_Net(multi_inputs[i], self.is_training, 2
     exec_statement += ", "
-    #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2,
+    #pred,seg,att = GoogLe_Net(multi_inputs[i], self.is_training, 2,
     exec_statement += str(opts.batch_size / opts.num_gpu)
-    #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12
+    #pred,seg,att = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12
     exec_statement += ", self.keep_prob)"
-    #self.pred = GoogLe_Net(self.xTe, self.is_training, 2, 12, self.keep_prob)
+    #pred,seg,att = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12, self.keep_prob)
     return exec_statement
 
 def average_gradients(grads_multi):
@@ -106,13 +106,17 @@ class classifier:
             self.matrix_size, self.num_channels = 224,1
         xTe_size = [1, self.matrix_size, self.matrix_size, self.num_channels]
         yTe_size = [1]
+        sTe_size = [1, self.matrix_size, self.matrix_size]
         each_bs  = self.opts.batch_size
         xTr_size = [each_bs, self.matrix_size, self.matrix_size, self.num_channels]
         yTr_size = [each_bs]
+        sTr_size = [each_bs, self.matrix_size, self.matrix_size]
         self.xTe = tf.placeholder(tf.float32, xTe_size)
         self.yTe = tf.placeholder(tf.int64, yTe_size)
+        self.sTe = tf.placeholder(tf.int64, sTe_size)
         self.xTr = tf.placeholder(tf.float32, xTr_size)
         self.yTr = tf.placeholder(tf.int64, yTr_size)
+        self.sTr = tf.placeholder(tf.int64, sTr_size)
         self.is_training = tf.placeholder_with_default(1, shape=())
         self.keep_prob = tf.placeholder(tf.float32)
 
@@ -122,8 +126,10 @@ class classifier:
         self.L2_loss = get_L2_loss(self.opts.l2)
         self.L1_loss = get_L1_loss(self.opts.l1)
         self.ce_loss = get_ce_loss(self.pred, self.yTe)
-        self.cost = self.ce_loss + self.L2_loss + self.L1_loss
+        self.seg_loss = get_seg_loss(self.seg, self.sTe, self.opts.num_class)
+        self.cost = self.ce_loss + self.L2_loss + self.L1_loss + self.seg_loss
         self.prob = tf.nn.softmax(self.pred)
+        self.seg_prob = tf.nn.softmax(self.seg)
         self.acc = get_accuracy(self.pred, self.yTe)
 
         # Listing the data.
@@ -146,6 +152,7 @@ class classifier:
         acc_multi = []
         multi_inputs = tf.split(self.xTr, self.opts.num_gpu, 0)
         multi_outputs = tf.split(self.yTr, self.opts.num_gpu, 0)
+        multi_segs = tf.split(self.sTr, self.opts.num_gpu, 0)
         tf.get_variable_scope().reuse_variables()
         for i in xrange(self.opts.num_gpu):
             with tf.device('/gpu:%d' % i):
@@ -153,8 +160,13 @@ class classifier:
                     exec_statement = create_exec_statement_train(opts)
                     exec exec_statement
                     loss = get_ce_loss(pred, multi_outputs[i])
+                    loss_seg = get_seg_loss(seg, multi_segs[i], self.opts.num_class)
                     loss_multi.append(loss)
-                    cost = loss + self.L2_loss + self.L1_loss
+                    cost = loss + self.L2_loss + self.L1_loss + loss_seg
+
+                    if i == 0:
+                        prob_seg = tf.nn.softmax(seg)
+                        self.segmentation_example = prob_seg[0]
 
                     grads_and_vars = optimizer.compute_gradients(cost)
                     grads_multi.append(grads_and_vars)
@@ -179,12 +191,56 @@ class classifier:
             self.plot_accuracy = self.f.add_subplot(121)
             self.plot_loss = self.f.add_subplot(122)
             self.f2, self.plot_att = plt.subplots(5,5)
+            self.f3 = plt.figure()
+            self.image_orig = self.f3.add_subplot(131)
+            self.seg_pred = self.f3.add_subplot(132)
+            self.seg_truth = self.f3.add_subplot(133)
 
         self.dataXX = np.zeros(xTr_size, dtype=np.float32)
         self.dataYY = np.zeros(yTr_size, dtype=np.int64)
+        self.dataSS = np.zeros(sTr_size, dtype=np.int64)
 
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 
+    def average_iou(self, pred, truth):
+        img_pred = np.argmax(pred, axis=2)
+        iou = 0.0
+        for i in range(pred.shape[2]):
+            intersection = np.sum((img_pred == i) & (truth == i))
+            union = np.sum((img_pred == i) | (truth == i))
+            iou += float(intersection) / float(union) / pred.shape[2]
+        return iou
+
+    def super_colormap(self, img, cmap):
+        img -= np.min(img)
+        img /= np.max(img)
+        return_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.float32)
+        red_chan = np.clip(-2 + 4.0*cmap, 0,1)
+        green_chan = np.clip(2 - 4.0*np.abs(cmap - 0.5), 0,1)
+        blue_chan = np.clip(2 - 4.0*cmap, 0,1)
+        return_img[:,:,0] = 0.2*red_chan + 0.8*img
+        return_img[:,:,1] = 0.2*green_chan + 0.8*img
+        return_img[:,:,2] = 0.2*blue_chan + 0.8*img
+        return return_img
+    
+    def super_graph_seg(self, img, pred, truth, save=False, name='0'):
+        self.image_orig.cla()
+        self.seg_pred.cla()
+        self.seg_truth.cla()
+        self.image_orig.imshow(img, cmap='bone')
+        self.seg_pred.imshow(self.super_colormap(img, pred))
+        self.seg_truth.imshow(self.super_colormap(img, truth))
+        self.image_orig.set_title('Original')
+        self.seg_pred.set_title('Prediction')
+        self.seg_truth.set_title('Ground Truth')
+        if self.opts.path_visualization and save:
+            path_save = join(self.opts.path_visualization, 'segmentation')
+            if not isdir(path_save):
+                mkdir(path_save)
+            self.f3.savefig(join(path_save, name + '.png'))
+        plt.pause(0.05)
+        return 0
+    
     def average_accuracy(self, logits, truth):
         prediction = np.argmax(logits, axis=1)
         return np.mean(0.0 + (prediction == truth))
@@ -261,19 +317,22 @@ class classifier:
         ind_list = np.random.choice(range(len(self.X_tr)), self.opts.batch_size, replace=True)
         for iter_data, ind in enumerate(ind_list):
             img_filename = np.random.choice(listdir(join(self.opts.path_train, self.X_tr[ind])))
-            while(True):
-                try:
-                    with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
-                        data_iter = np.array(hf.get('data'))
-                        data_label = np.array(hf.get('label'))
-                    break
-                except:
-                    time.sleep(0.001)
-            data_iter = data_augment(data_iter)
+            try:
+                with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
+                    data_iter = np.array(hf.get('data'))
+                    data_label = np.array(hf.get('label'))
+                    data_seg = np.array(hf.get('seg'))
+            except:
+                print 'Failed: ' + join(self.opts.path_train, self.X_tr[ind], img_filename)
+                continue
+            data_iter, data_seg = data_augment(data_iter, data_seg)
             self.dataXX[iter_data,:,:,:] = data_iter
             self.dataYY[iter_data]   = data_label
-        feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY, self.keep_prob:self.opts.keep_prob}
-        _, loss_iter, acc_iter = self.sess.run((self.optimizer, self.loss_multi, self.acc_multi), feed_dict=feed)
+            self.dataSS[iter_data,:,:] = data_seg
+        feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY, self.sTr:self.dataSS, self.keep_prob:self.opts.keep_prob}
+        _, loss_iter, acc_iter, seg_example = self.sess.run((self.optimizer, self.loss_multi, self.acc_multi, self.segmentation_example), feed_dict=feed)
+        if self.opts.bool_display:
+            self.super_graph_seg(self.dataXX[0,:,:,0], seg_example[:,:,1], self.dataSS[0,:,:])
         return loss_iter, acc_iter
 
     def inference_one_iter(self, path_file):

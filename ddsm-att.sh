@@ -1,9 +1,9 @@
-declare -r path_train=/home/dnr/Documents/data/ddsm-1024/training
-#declare -r path_test=/home/dnr/Documents/data/ddsm-1024/testing
-declare -r path_val=/home/dnr/Documents/data/ddsm-1024/validation
-declare -r path_inf=/home/dnr/Documents/data/ddsm-1024/inference
+declare -r path_train=/home/dnr/Documents/data/ddsm/training
+#declare -r path_test=/home/dnr/Documents/data/ddsm/testing
+declare -r path_val=/home/dnr/Documents/data/ddsm/validation
+declare -r path_inf=/home/dnr/Documents/data/ddsm/inference
 
-declare -r name=ddsm-1024-att
+declare -r name=ddsm-att
 
 declare -r path_model=/home/dnr/modelState/$name.ckpt
 declare -r path_log=/home/dnr/logs/$name.txt

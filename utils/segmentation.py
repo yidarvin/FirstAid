@@ -100,8 +100,10 @@ class segmentor:
             self.matrix_size, self.num_channels = find_data_shape(self.opts.path_train)
         elif self.opts.path_test:
             self.matrix_size, self.num_channels = find_data_shape(self.opts.path_test)
+        elif self.opts.path_inference:
+            self.matrix_size, self.num_channels = find_data_shape(self.opts.path_inference)
         else:
-            self.matrix_size, self.num_channels = 224,1
+            self.matrix_size, self.num_channels = 512,1
         xTe_size = [1, self.matrix_size, self.matrix_size, self.num_channels]
         yTe_size = [1, self.matrix_size, self.matrix_size]
         each_bs  = self.opts.batch_size
@@ -240,14 +242,13 @@ class segmentor:
         ind_list = np.random.choice(range(len(self.X_tr)), self.opts.batch_size, replace=True)
         for iter_data, ind in enumerate(ind_list):
             img_filename = np.random.choice(listdir(join(self.opts.path_train, self.X_tr[ind])))
-            while(True):
-                try:
-                    with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
-                        data_iter = np.array(hf.get('data'))
-                        data_seg = np.array(hf.get('seg'))
-                    break
-                except:
-                    time.sleep(0.001)
+            try:
+                with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
+                    data_iter = np.array(hf.get('data'))
+                    data_seg = np.array(hf.get('seg'))
+            except:
+                print 'Failed: ' + join(self.opts.path_train, self.X_tr[ind], img_filename)
+                continue
             data_iter, data_seg = data_augment(data_iter, data_seg)
             self.dataXX[iter_data,:,:,:] = data_iter
             self.dataYY[iter_data,:,:]   = data_seg
@@ -265,13 +266,11 @@ class segmentor:
         - path_file: (str) path of the file to inference.
         """
         dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
-        while(True):
-            try:
-                with h5py.File(path_file) as hf:
-                    dataXX[0,:,:,:] = np.array(hf.get('data'))
-                    break
-            except:
-                time.sleep(0.001)
+        try:
+            with h5py.File(path_file) as hf:
+                dataXX[0,:,:,:] = np.array(hf.get('data'))
+        except:
+            print 'Failed: ' + path_file
         feed = {self.xTe:dataXX, self.is_training:0}
         img = dataXX[0,:,:,0]
         mask = self.sess.run((self.prob), feed_dict=feed)
@@ -291,14 +290,12 @@ class segmentor:
         """
         dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
         dataYY = np.zeros((1, self.matrix_size, self.matrix_size))
-        while(True):
-            try:
-                with h5py.File(path_file) as hf:
-                    dataXX[0,:,:,:] = np.array(hf.get('data'))
-                    dataYY[0,:,:]   = np.array(hf.get('seg'))
-                    break
-            except:
-                time.sleep(0.001)
+        try:
+            with h5py.File(path_file) as hf:
+                dataXX[0,:,:,:] = np.array(hf.get('data'))
+                dataYY[0,:,:]   = np.array(hf.get('seg'))
+        except:
+            print 'Failed: ' + path_file
         feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY}
         seg_loss, pred = self.sess.run((self.seg_loss, self.pred), feed_dict=feed)
         iou = self.average_iou(pred[0], dataYY[0])
