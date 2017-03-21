@@ -15,7 +15,7 @@ def get_L2_loss(reg_param, key="reg_variables"):
         L2_loss += reg_param * tf.nn.l2_loss(W)
     return L2_loss
 
-def get_L1_loss(reg_param, key="reg_variables"):
+def get_L1_loss(reg_param, key="l1_variables"):
     """
     L1 Loss Layer. Usually will use "reg_variables" collection.
     INPUTS:

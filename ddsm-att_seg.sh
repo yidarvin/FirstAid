@@ -8,4 +8,4 @@ declare -r name=ddsm-att
 declare -r path_model=/home/dnr/modelState/$name.ckpt
 declare -r path_log=/home/dnr/logs/$name.txt
 
-python train_CNNattention_seg.py --pTrain $path_train --pVal $path_val --pLog $path_log --name $name --nGPU 4 --bs 128 --ep 1000 --nClass 2 --do 1.0 --lr 0.0001 --net GoogLe
+python train_CNNattention_seg.py --pTrain $path_train --pVal $path_val --pLog $path_log --name $name --nGPU 4 --bs 128 --ep 1000 --nClass 2 --do 1.0 --lr 0.001 --net GoogLe --l1 0.1

@@ -191,6 +191,7 @@ def dense_wo_bias(layer, hidden_size, name="dense_wo_bias"):
       with tf.variable_scope(name+"_param"):
         W = tf.get_variable("W", weight_shape, initializer=tf.random_normal_initializer(stddev=std))
     tf.add_to_collection("reg_variables", W)
+    tf.add_to_collection("l1_variables", W)
     layer = tf.matmul(reshape_layer, W)
     return layer
 
