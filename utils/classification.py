@@ -175,9 +175,9 @@ class classifier:
         self.val_loss = []
 
         if self.opts.bool_display:
-            self.f = plt.figure()
-            self.plot_accuracy = self.f.add_subplot(121)
-            self.plot_loss = self.f.add_subplot(122)
+            self.f1 = plt.figure()
+            self.plot_accuracy = self.f1.add_subplot(121)
+            self.plot_loss = self.f1.add_subplot(122)
 
         self.dataXX = np.zeros(xTr_size, dtype=np.float32)
         self.dataYY = np.zeros(yTr_size, dtype=np.int64)
@@ -188,7 +188,7 @@ class classifier:
         prediction = np.argmax(logits, axis=1)
         return np.mean(0.0 + (prediction == truth))
     
-    def super_graph(self, save=False, name='0'):
+    def super_graph(self, save=True, name='0'):
         self.plot_accuracy.cla()
         self.plot_loss.cla()
 

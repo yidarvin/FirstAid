@@ -167,10 +167,10 @@ class segmentor:
         self.saver = tf.train.Saver(max_to_keep=None)
 
         if self.opts.bool_display:
-            self.f = plt.figure()
-            self.image_orig = self.f.add_subplot(131)
-            self.seg_pred = self.f.add_subplot(132)
-            self.seg_truth = self.f.add_subplot(133)
+            self.f1 = plt.figure()
+            self.image_orig = self.f1.add_subplot(131)
+            self.seg_pred = self.f1.add_subplot(132)
+            self.seg_truth = self.f1.add_subplot(133)
 
         self.dataXX = np.zeros(xTr_size, dtype=np.float32)
         self.dataYY = np.zeros(yTr_size, dtype=np.int64)
