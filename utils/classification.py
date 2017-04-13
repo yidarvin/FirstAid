@@ -56,7 +56,7 @@ def create_exec_statement_train(opts):
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2
     exec_statement += ", "
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2,
-    exec_statement += str(opts.batch_size / opts.num_gpu)
+    exec_statement += str(opts.batch_size / max(1,opts.num_gpu))
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12
     exec_statement += ", self.keep_prob)"
     #self.pred = GoogLe_Net(self.xTe, self.is_training, 2, 12, self.keep_prob)
@@ -128,14 +128,26 @@ class classifier:
 
         # Listing the data.
         if self.opts.path_train:
-            self.X_tr = listdir(self.opts.path_train)
+            list_imgs = listdir(self.opts.path_train)
+            for name_img in list_imgs:
+                if name_img[0]=='.':
+                    list_imgs.remove(name_img)
+            self.X_tr = list_imgs
             self.iter_count, self.epoch_every, self.print_every = calculate_iters(len(self.X_tr), self.opts.max_epoch, self.opts.batch_size)
         else:
             self.iter_count, self.epoch_every, self.print_every = calculate_iters(1000, self.opts.max_epoch, self.opts.batch_size)
         if self.opts.path_validation:
-            self.X_val = listdir(self.opts.path_validation)
+            list_imgs = listdir(self.opts.path_validation)
+            for name_img in list_imgs:
+                if name_img[0] == '.':
+                    list_imgs.remove(name_img)
+            self.X_val = list_imgs
         if self.opts.path_test:
-            self.X_te = listdir(self.opts.path_test)
+            list_imgs = listdir(self.opts.path_test)
+            for name_img in list_imgs:
+                if name_img[0] == '.':
+                    list_imgs.remove(name_img)
+            self.X_te = list_imgs
         optimizer,global_step = get_optimizer(self.opts.lr, self.opts.lr_decay, self.epoch_every)
         grads = optimizer.compute_gradients(self.cost)
         self.optimizer = optimizer.apply_gradients(grads, global_step=global_step)
@@ -144,8 +156,8 @@ class classifier:
         loss_multi = []
         grads_multi = []
         acc_multi = []
-        multi_inputs = tf.split(self.xTr, self.opts.num_gpu, 0)
-        multi_outputs = tf.split(self.yTr, self.opts.num_gpu, 0)
+        multi_inputs = tf.split(self.xTr, max(self.opts.num_gpu,1), 0)
+        multi_outputs = tf.split(self.yTr, max(self.opts.num_gpu,1), 0)
         tf.get_variable_scope().reuse_variables()
         for i in xrange(self.opts.num_gpu):
             with tf.device('/gpu:%d' % i):
@@ -161,10 +173,24 @@ class classifier:
 
                     accuracy = get_accuracy(pred, multi_outputs[i])
                     acc_multi.append(accuracy)
+        if self.opts.num_gpu == 0:
+            i = 0
+            with tf.name_scope('cpu0') as scope:
+                exec_statement = create_exec_statement_train(opts)
+                exec exec_statement
+                loss = get_ce_loss(pred, multi_outputs[i])
+                loss_multi.append(loss)
+                cost = loss + self.L2_loss + self.L1_loss
+
+                grads_and_vars = optimizer.compute_gradients(cost)
+                grads_multi.append(grads_and_vars)
+
+                accuracy = get_accuracy(pred, multi_outputs[i])
+                acc_multi.append(accuracy)
         grads = average_gradients(grads_multi)
         self.optimizer = optimizer.apply_gradients(grads, global_step=global_step)
-        self.loss_multi = tf.add_n(loss_multi) / self.opts.num_gpu
-        self.acc_multi = tf.add_n(acc_multi) / self.opts.num_gpu
+        self.loss_multi = tf.add_n(loss_multi) / max(self.opts.num_gpu,1)
+        self.acc_multi = tf.add_n(acc_multi) / max(self.opts.num_gpu,1)
 
         self.init = tf.global_variables_initializer()
         self.saver = tf.train.Saver(max_to_keep=None)
@@ -308,6 +334,9 @@ class classifier:
         """
         # Initializing variables.
         X_list = listdir(path_X)
+        for name in X_list:
+            if name[0] == '.':
+                X_list.remove(name)
         acc_te  = 0.0
         loss_te = 0.0
         # Doing the testing.

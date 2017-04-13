@@ -13,7 +13,7 @@ import sys
 import time
 
 from layers import *
-from nets_segmentation import *
+from nets_classification import *
 from data import *
 from ops import *
 
@@ -33,8 +33,10 @@ def create_exec_statement_test(opts):
     #self.pred = GoogLe_Net(self.xTe, self.is_training,
     exec_statement += str(opts.num_class)
     #self.pred = GoogLe_Net(self.xTe, self.is_training, 2
-    exec_statement += ", 1)"
-    #self.pred = GoogLe_Net(self.xTe, self.is_training, 2, 1)
+    exec_statement += ", 1"
+    #self.pred = GoogLe_Net(self.xTe, self.is_training, 2, 1
+    exec_statement += ", self.keep_prob)"
+    #self.pred = GoogLe_Net(self.xTe, self.is_training, 2, 1, self.keep_prob)
     return exec_statement
 
 def create_exec_statement_train(opts):
@@ -56,8 +58,8 @@ def create_exec_statement_train(opts):
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2,
     exec_statement += str(opts.batch_size / max(1,opts.num_gpu))
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12
-    exec_statement += ")"
-    #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12)
+    exec_statement += ", self.keep_prob)"
+    #self.pred = GoogLe_Net(self.xTe, self.is_training, 2, 12, self.keep_prob)
     return exec_statement
 
 def average_gradients(grads_multi):
@@ -85,7 +87,7 @@ def average_gradients(grads_multi):
         average_grads.append(grad_and_var)
     return average_grads
 
-class segmentor:
+class classifier:
     def __init__(self, opts):
         """
         Initialization of all the fields.
@@ -100,40 +102,52 @@ class segmentor:
             self.matrix_size, self.num_channels = find_data_shape(self.opts.path_train)
         elif self.opts.path_test:
             self.matrix_size, self.num_channels = find_data_shape(self.opts.path_test)
-        elif self.opts.path_inference:
-            self.matrix_size, self.num_channels = find_data_shape(self.opts.path_inference)
         else:
-            self.matrix_size, self.num_channels = 512,1
+            self.matrix_size, self.num_channels = 224,1
         xTe_size = [1, self.matrix_size, self.matrix_size, self.num_channels]
-        yTe_size = [1, self.matrix_size, self.matrix_size]
+        yTe_size = [1]
         each_bs  = self.opts.batch_size
         xTr_size = [each_bs, self.matrix_size, self.matrix_size, self.num_channels]
-        yTr_size = [each_bs, self.matrix_size, self.matrix_size]
+        yTr_size = [each_bs]
         self.xTe = tf.placeholder(tf.float32, xTe_size)
         self.yTe = tf.placeholder(tf.int64, yTe_size)
         self.xTr = tf.placeholder(tf.float32, xTr_size)
         self.yTr = tf.placeholder(tf.int64, yTr_size)
         self.is_training = tf.placeholder_with_default(1, shape=())
+        self.keep_prob = tf.placeholder(tf.float32)
 
         # Creating the Network for Testing
         exec_statement = create_exec_statement_test(opts)
         exec exec_statement
         self.L2_loss = get_L2_loss(self.opts.l2)
         self.L1_loss = get_L1_loss(self.opts.l1)
-        self.seg_loss = get_seg_loss(self.pred, self.yTe, self.opts.num_class)
-        self.cost = self.seg_loss + self.L2_loss + self.L1_loss
+        self.ce_loss = get_ce_loss(self.pred, self.yTe)
+        self.cost = self.ce_loss + self.L2_loss + self.L1_loss
         self.prob = tf.nn.softmax(self.pred)
+        self.acc = get_accuracy(self.pred, self.yTe)
 
         # Listing the data.
         if self.opts.path_train:
-            self.X_tr = listdir(self.opts.path_train)
+            list_imgs = listdir(self.opts.path_train)
+            for name_img in list_imgs:
+                if name_img[0]=='.':
+                    list_imgs.remove(name_img)
+            self.X_tr = list_imgs
             self.iter_count, self.epoch_every, self.print_every = calculate_iters(len(self.X_tr), self.opts.max_epoch, self.opts.batch_size)
         else:
             self.iter_count, self.epoch_every, self.print_every = calculate_iters(1000, self.opts.max_epoch, self.opts.batch_size)
         if self.opts.path_validation:
-            self.X_val = listdir(self.opts.path_validation)
+            list_imgs = listdir(self.opts.path_validation)
+            for name_img in list_imgs:
+                if name_img[0] == '.':
+                    list_imgs.remove(name_img)
+            self.X_val = list_imgs
         if self.opts.path_test:
-            self.X_te = listdir(self.opts.path_test)
+            list_imgs = listdir(self.opts.path_test)
+            for name_img in list_imgs:
+                if name_img[0] == '.':
+                    list_imgs.remove(name_img)
+            self.X_te = list_imgs
         optimizer,global_step = get_optimizer(self.opts.lr, self.opts.lr_decay, self.epoch_every)
         grads = optimizer.compute_gradients(self.cost)
         self.optimizer = optimizer.apply_gradients(grads, global_step=global_step)
@@ -141,90 +155,88 @@ class segmentor:
         # Creating the Network for Training
         loss_multi = []
         grads_multi = []
-        multi_inputs = tf.split(self.xTr, max(1,self.opts.num_gpu), 0)
-        multi_outputs = tf.split(self.yTr, max(1,self.opts.num_gpu), 0)
+        acc_multi = []
+        multi_inputs = tf.split(self.xTr, max(self.opts.num_gpu,1), 0)
+        multi_outputs = tf.split(self.yTr, max(self.opts.num_gpu,1), 0)
         tf.get_variable_scope().reuse_variables()
         for i in xrange(self.opts.num_gpu):
             with tf.device('/gpu:%d' % i):
                 with tf.name_scope('gpu%d' % i) as scope:
                     exec_statement = create_exec_statement_train(opts)
                     exec exec_statement
-                    loss = get_seg_loss(pred, multi_outputs[i], self.opts.num_class)
+                    loss = get_ce_loss(pred, multi_outputs[i])
                     loss_multi.append(loss)
                     cost = loss + self.L2_loss + self.L1_loss
 
-                    if i == 0:
-                        prob = tf.nn.softmax(pred)
-                        self.segmentation_example = prob[0]
-
                     grads_and_vars = optimizer.compute_gradients(cost)
                     grads_multi.append(grads_and_vars)
+
+                    accuracy = get_accuracy(pred, multi_outputs[i])
+                    acc_multi.append(accuracy)
         if self.opts.num_gpu == 0:
             i = 0
             with tf.name_scope('cpu0') as scope:
                 exec_statement = create_exec_statement_train(opts)
                 exec exec_statement
-                loss = get_seg_loss(pred, multi_outputs[i], self.opts.num_class)
+                loss = get_ce_loss(pred, multi_outputs[i])
                 loss_multi.append(loss)
                 cost = loss + self.L2_loss + self.L1_loss
 
-                if i == 0:
-                    prob = tf.nn.softmax(pred)
-                    self.segmentation_example = prob[0]
-
                 grads_and_vars = optimizer.compute_gradients(cost)
                 grads_multi.append(grads_and_vars)
+
+                accuracy = get_accuracy(pred, multi_outputs[i])
+                acc_multi.append(accuracy)
         grads = average_gradients(grads_multi)
         self.optimizer = optimizer.apply_gradients(grads, global_step=global_step)
-        self.loss_multi = tf.add_n(loss_multi) / max(1,self.opts.num_gpu)
+        self.loss_multi = tf.add_n(loss_multi) / self.opts.num_gpu
+        self.acc_multi = tf.add_n(acc_multi) / self.opts.num_gpu
 
         self.init = tf.global_variables_initializer()
         self.saver = tf.train.Saver(max_to_keep=None)
 
+        self.tr_acc = []
+        self.tr_loss = []
+        self.val_acc = []
+        self.val_loss = []
+
         if self.opts.bool_display:
             self.f1 = plt.figure()
-            self.image_orig = self.f1.add_subplot(131)
-            self.seg_pred = self.f1.add_subplot(132)
-            self.seg_truth = self.f1.add_subplot(133)
+            self.plot_accuracy = self.f1.add_subplot(121)
+            self.plot_loss = self.f1.add_subplot(122)
 
         self.dataXX = np.zeros(xTr_size, dtype=np.float32)
         self.dataYY = np.zeros(yTr_size, dtype=np.int64)
 
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 
-    def average_iou(self, pred, truth):
-        img_pred = np.argmax(pred, axis=2)
-        iou = 0.0
-        for i in range(pred.shape[2]):
-            intersection = np.sum((img_pred == i) & (truth == i))
-            union = np.sum((img_pred == i) | (truth == i))
-            iou += float(intersection) / float(union) / pred.shape[2]
-        return iou
+    def average_accuracy(self, logits, truth):
+        prediction = np.argmax(logits, axis=1)
+        return np.mean(0.0 + (prediction == truth))
     
-    def super_colormap(self, img, cmap):
-        img -= np.min(img)
-        img /= np.max(img)
-        return_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.float32)
-        red_chan = np.clip(-2 + 4.0*cmap, 0,1)
-        green_chan = np.clip(2 - 4.0*np.abs(cmap - 0.5), 0,1)
-        blue_chan = np.clip(2 - 4.0*cmap, 0,1)
-        return_img[:,:,0] = 0.2*red_chan + 0.8*img
-        return_img[:,:,1] = 0.2*green_chan + 0.8*img
-        return_img[:,:,2] = 0.2*blue_chan + 0.8*img
-        return return_img
-    
-    def super_graph_seg(self, img, pred, truth, save=False, name='0'):
-        self.image_orig.cla()
-        self.seg_pred.cla()
-        self.seg_truth.cla()
-        self.image_orig.imshow(img, cmap='bone')
-        self.seg_pred.imshow(self.super_colormap(img, pred))
-        self.seg_truth.imshow(self.super_colormap(img, truth))
-        self.image_orig.set_title('Original')
-        self.seg_pred.set_title('Prediction')
-        self.seg_truth.set_title('Ground Truth')
+    def super_graph(self, save=True, name='0'):
+        self.plot_accuracy.cla()
+        self.plot_loss.cla()
+
+        self.plot_accuracy.plot(self.tr_acc, 'b')
+        if self.val_acc:
+            self.plot_accuracy.plot(self.val_acc, 'r')
+        self.plot_accuracy.set_ylim([0,1])
+        self.plot_accuracy.set_xlabel('Epoch')
+        self.plot_accuracy.set_ylabel('Accuracy')
+        self.plot_accuracy.set_title('Accuracy')
+
+        self.plot_loss.plot(self.tr_loss, 'b')
+        if self.val_loss:
+            self.plot_loss.plot(self.val_loss, 'r')
+        ymax = 2 * np.log(self.opts.num_class)
+        self.plot_loss.set_ylim([0, ymax])
+        self.plot_loss.set_xlabel('Epoch')
+        self.plot_loss.set_ylabel('-log(P(correct_class))')
+        self.plot_loss.set_title('CrossEntropy Loss')
+        
         if self.opts.path_visualization and save:
-            path_save = join(self.opts.path_visualization, 'segmentation')
+            path_save = join(self.opts.path_visualization, 'accuracy')
             if not isdir(path_save):
                 mkdir(path_save)
             self.f1.savefig(join(path_save, name + '.png'))
@@ -257,21 +269,20 @@ class segmentor:
         ind_list = np.random.choice(range(len(self.X_tr)), self.opts.batch_size, replace=True)
         for iter_data, ind in enumerate(ind_list):
             img_filename = np.random.choice(listdir(join(self.opts.path_train, self.X_tr[ind])))
-            try:
-                with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
-                    data_iter = np.array(hf.get('data'))
-                    data_seg = np.array(hf.get('seg'))
-            except:
-                print 'Failed: ' + join(self.opts.path_train, self.X_tr[ind], img_filename)
-                continue
-            data_iter, data_seg = data_augment(data_iter, data_seg)
+            while(True):
+                try:
+                    with h5py.File(join(self.opts.path_train, self.X_tr[ind], img_filename)) as hf:
+                        data_iter = np.array(hf.get('data'))
+                        data_label = np.array(hf.get('label'))
+                    break
+                except:
+                    time.sleep(0.001)
+            data_iter = data_augment(data_iter)
             self.dataXX[iter_data,:,:,:] = data_iter
-            self.dataYY[iter_data,:,:]   = data_seg
-        feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY}
-        _, loss_iter,seg_example = self.sess.run((self.optimizer, self.loss_multi, self.segmentation_example), feed_dict=feed)
-        if self.opts.bool_display:
-            self.super_graph_seg(self.dataXX[0,:,:,0], seg_example[:,:,1], self.dataYY[0,:,:])
-        return loss_iter
+            self.dataYY[iter_data]   = data_label
+        feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY, self.keep_prob:self.opts.keep_prob}
+        _, loss_iter, acc_iter = self.sess.run((self.optimizer, self.loss_multi, self.acc_multi), feed_dict=feed)
+        return loss_iter, acc_iter
 
     def inference_one_iter(self, path_file):
         """
@@ -281,20 +292,17 @@ class segmentor:
         - path_file: (str) path of the file to inference.
         """
         dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
-        try:
-            with h5py.File(path_file) as hf:
-                dataXX[0,:,:,:] = np.array(hf.get('data'))
-        except:
-            print 'Failed: ' + path_file
-        feed = {self.xTe:dataXX, self.is_training:0}
-        img = dataXX[0,:,:,0]
-        mask = self.sess.run((self.prob), feed_dict=feed)
-        mask = mask[0]
-        mask = mask[:,:,1]
-        rand = np.random.rand(mask.shape[0], mask.shape[1])
-        if self.opts.bool_display:
-            self.super_graph_seg(img, mask, rand)
-        return mask
+        while(True):
+            try:
+                with h5py.File(path_file) as hf:
+                    dataXX[0,:,:,:] = np.array(hf.get('data'))
+                    break
+            except:
+                time.sleep(0.001)
+        feed = {self.xTe:dataXX, self.is_training:0, self.keep_prob:1.0}
+        prob = self.sess.run((self.prob), feed_dict=feed)
+        prob = prob[0]
+        return prob
 
     def test_one_iter(self, path_file, name='0'):
         """
@@ -304,20 +312,18 @@ class segmentor:
         - path_file: (str) path of the file to inference.
         """
         dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
-        dataYY = np.zeros((1, self.matrix_size, self.matrix_size))
-        try:
-            with h5py.File(path_file) as hf:
-                dataXX[0,:,:,:] = np.array(hf.get('data'))
-                dataYY[0,:,:]   = np.array(hf.get('seg'))
-        except:
-            print 'Failed: ' + path_file
-        feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY}
-        seg_loss, pred = self.sess.run((self.seg_loss, self.pred), feed_dict=feed)
-        iou = self.average_iou(pred[0], dataYY[0])
-        if self.opts.bool_display:
-            self.super_graph_seg(dataXX[0,:,:,0], pred[0,:,:,1], dataYY[0,:,:],
-                                 save=True, name=name)
-        return seg_loss, iou
+        dataYY = np.zeros((1))
+        while(True):
+            try:
+                with h5py.File(path_file) as hf:
+                    dataXX[0,:,:,:] = np.array(hf.get('data'))
+                    dataYY[0]   = np.array(hf.get('label'))
+                    break
+            except:
+                time.sleep(0.001)
+        feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY, self.keep_prob:1.0}
+        loss, acc = self.sess.run((self.ce_loss, self.acc), feed_dict=feed)
+        return loss, acc
 
     def test_all(self, path_X):
         """
@@ -328,7 +334,10 @@ class segmentor:
         """
         # Initializing variables.
         X_list = listdir(path_X)
-        iou_te  = 0.0
+        for name in X_list:
+            if name[0] == '.':
+                X_list.remove(name)
+        acc_te  = 0.0
         loss_te = 0.0
         # Doing the testing.
         for iter_data in range(len(X_list)):
@@ -337,10 +346,10 @@ class segmentor:
             files_data_iter = listdir(path_data_iter)
             for file_data in files_data_iter:
                 path_file = join(path_data_iter, file_data)
-                loss_iter_iter, iou_iter_iter = self.test_one_iter(path_file, name=file_data)
+                loss_iter_iter, acc_iter_iter = self.test_one_iter(path_file, name=file_data)
                 loss_te += loss_iter_iter / len(files_data_iter) / len(X_list)
-                iou_te += iou_iter_iter / len(files_data_iter) / len(X_list)
-        return loss_te, iou_te
+                acc_te += acc_iter_iter / len(files_data_iter) / len(X_list)
+        return loss_te, acc_te
         
     
     def train_model(self):
@@ -352,6 +361,7 @@ class segmentor:
         # Initializing
         start_time = time.time()
         loss_tr = 0.0
+        acc_tr = 0.0
         if self.opts.bool_load:
             self.saver.restore(self.sess, self.opts.path_model)
         else:
@@ -359,21 +369,29 @@ class segmentor:
         # Training
         self.super_print("Let's start the training!")
         for iter in range(self.iter_count):
-            loss_temp = self.train_one_iter(iter)
+            loss_temp, acc_temp = self.train_one_iter(iter)
             loss_tr += loss_temp / self.print_every
+            acc_tr += acc_temp / self.print_every
             if ((iter)%self.print_every) == 0 or iter == self.iter_count-1:
                 if iter == 0:
                     loss_tr *= self.print_every
+                    acc_tr *= self.print_every
+                self.tr_loss.append(loss_tr)
+                self.tr_acc.append(acc_tr)
                 current_time = time.time()
                 statement = "\t"
                 statement += "Iter: " + str(iter) + " "
                 statement += "Time: " + str((current_time - start_time) / 60) + " "
                 statement += "Loss_tr: " + str(loss_tr)
                 loss_tr = 0.0
+                acc_tr = 0.0
                 if self.opts.path_validation:
-                    loss_val, iou_val = self.test_all(self.opts.path_validation)
+                    loss_val, acc_val = self.test_all(self.opts.path_validation)
+                    self.val_loss.append(loss_val)
+                    self.val_acc.append(acc_val)
                     statement += " Loss_val: " + str(loss_val)
-                    statement += " IOU_val: " + str(iou_val)
+                if self.opts.bool_display:
+                    self.super_graph()
                 self.super_print(statement)
         if self.opts.path_model:
             self.saver.save(self.sess, self.opts.path_model)
@@ -408,9 +426,9 @@ class segmentor:
                 if name_img[-3:] != '.h5':
                     continue
                 path_file = join(path_imgs, name_img)
-                mask = self.inference_one_iter(path_file)
+                prob = self.inference_one_iter(path_file)
                 h5f = h5py.File(path_file, 'a')
-                h5f.create_dataset('seg_pred', data=mask)
+                h5f.create_dataset('label_pred', data=prob)
                 h5f.close()
             
             

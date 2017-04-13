@@ -54,7 +54,7 @@ def create_exec_statement_train(opts):
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2
     exec_statement += ", "
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2,
-    exec_statement += str(opts.batch_size / max(1,opts.num_gpu))
+    exec_statement += str(opts.batch_size / opts.num_gpu)
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12
     exec_statement += ")"
     #pred = GoogLe_Net(multi_inputs[i], self.is_training, 2, 12)
@@ -141,8 +141,8 @@ class segmentor:
         # Creating the Network for Training
         loss_multi = []
         grads_multi = []
-        multi_inputs = tf.split(self.xTr, max(1,self.opts.num_gpu), 0)
-        multi_outputs = tf.split(self.yTr, max(1,self.opts.num_gpu), 0)
+        multi_inputs = tf.split(self.xTr, self.opts.num_gpu, 0)
+        multi_outputs = tf.split(self.yTr, self.opts.num_gpu, 0)
         tf.get_variable_scope().reuse_variables()
         for i in xrange(self.opts.num_gpu):
             with tf.device('/gpu:%d' % i):
@@ -159,24 +159,9 @@ class segmentor:
 
                     grads_and_vars = optimizer.compute_gradients(cost)
                     grads_multi.append(grads_and_vars)
-        if self.opts.num_gpu == 0:
-            i = 0
-            with tf.name_scope('cpu0') as scope:
-                exec_statement = create_exec_statement_train(opts)
-                exec exec_statement
-                loss = get_seg_loss(pred, multi_outputs[i], self.opts.num_class)
-                loss_multi.append(loss)
-                cost = loss + self.L2_loss + self.L1_loss
-
-                if i == 0:
-                    prob = tf.nn.softmax(pred)
-                    self.segmentation_example = prob[0]
-
-                grads_and_vars = optimizer.compute_gradients(cost)
-                grads_multi.append(grads_and_vars)
         grads = average_gradients(grads_multi)
         self.optimizer = optimizer.apply_gradients(grads, global_step=global_step)
-        self.loss_multi = tf.add_n(loss_multi) / max(1,self.opts.num_gpu)
+        self.loss_multi = tf.add_n(loss_multi) / self.opts.num_gpu
 
         self.init = tf.global_variables_initializer()
         self.saver = tf.train.Saver(max_to_keep=None)

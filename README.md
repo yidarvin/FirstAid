@@ -26,6 +26,29 @@ We have also used a variety of different base networks:
 - h5py Package
   - `pip install h5py`
 
+## MacBook Install and Run
+
+Here we can show how you can run this code with just a simple MacBook.  This won't use the GPU's, if you're okay with that, I'm okay with that.  Run the following code in the terminal (terminal is in the utilities folder) of your MacBook:
+
+`pip install --upgrade tensorflow`
+`pip install h5py`
+
+Then install the FirstAid package.  You can simple download the .zip of this repository, or use the command line
+
+`git clone https://github.com/yidarvin/FirstAid.git`
+
+in the directory you want to have the repository.
+
+After that, make sure your data is in the right format.  You can have some fun with a toy-directory I created called glasses.  You can see how I format the toy-directory as an example for your own data.
+
+`git clone https://github.com/yidarvin/glasses.git`
+
+From that directory, you can simply call (within the glasses repository)
+
+`bash glasses.sh`
+
+
+
 ## Philosophy (of Filepath Structure)
 
 There are four main filepaths of importance:
