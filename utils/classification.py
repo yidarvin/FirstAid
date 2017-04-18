@@ -216,6 +216,8 @@ class classifier:
     
     def confusion_matrix(self, logits, truth):
         prediction = np.argmax(logits, axis=1)
+        truth = truth.astype(np.int64)
+        prediction = prediction.astype(np.int64)
         O = np.zeros((self.opts.num_class, self.opts.num_class))
         for i in range(len(truth)):
             O[truth[i], prediction[i]] += 1
@@ -223,6 +225,8 @@ class classifier:
     
     def quadratic_kappa(self, logits, truth):
         prediction = np.argmax(logits, axis=1)
+        truth = truth.astype(np.int64)
+        prediction = prediction.astype(np.int64)
         t_vec = np.zeros((self.opts.num_class))
         p_vec = np.zeros((self.opts.num_class))
         O = np.zeros((self.opts.num_class, self.opts.num_class))
@@ -350,7 +354,7 @@ class classifier:
                 time.sleep(0.001)
         feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY, self.keep_prob:1.0}
         loss, acc, pred = self.sess.run((self.ce_loss, self.acc, self.pred), feed_dict=feed)
-        return loss, acc, pred, dataYY[0]
+        return loss, acc, pred, dataYY
 
     def test_all(self, path_X):
         """
@@ -368,6 +372,7 @@ class classifier:
         loss_te = 0.0
         preds = []
         truths = []
+        counter = 0
         # Doing the testing.
         for iter_data in range(len(X_list)):
             # Reading in the data.
@@ -378,8 +383,13 @@ class classifier:
                 loss_iter_iter, acc_iter_iter,pred_iter_iter,truth_iter_iter = self.test_one_iter(path_file, name=file_data)
                 loss_te += loss_iter_iter / len(files_data_iter) / len(X_list)
                 acc_te += acc_iter_iter / len(files_data_iter) / len(X_list)
-                preds.append(pred_iter_iter)
-                truths.append(truth_iter_iter)
+                if counter == 0:
+                    preds = pred_iter_iter
+                    truths = truth_iter_iter
+                    counter += 1
+                else:
+                    preds = np.concatenate((preds, pred_iter_iter), axis=0)
+                    truths = np.concatenate((truths, truth_iter_iter), axis=0)
         return loss_te, acc_te, preds, truths
         
     
