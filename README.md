@@ -31,6 +31,7 @@ We have also used a variety of different base networks:
 Here we can show how you can run this code with just a simple MacBook.  This won't use the GPU's, if you're okay with that, I'm okay with that.  Run the following code in the terminal (terminal is in the utilities folder) of your MacBook:
 
 `pip install --upgrade tensorflow`
+
 `pip install h5py`
 
 Then install the FirstAid package.  You can simple download the .zip of this repository, or use the command line
