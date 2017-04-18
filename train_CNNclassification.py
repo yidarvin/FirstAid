@@ -40,6 +40,8 @@ def main(args):
     # Switches
     parser.add_argument("--bLo", dest="bool_load", type=int, default=0)
     parser.add_argument("--bDisp", dest="bool_display", type=int, default=1)
+    parser.add_argument("--bConf", dest="bool_confusion", type=int, default=0)
+    parser.add_argument("--bKappa", dest="bool_kappa", type=int, default=0)
 
     # Creating Object
     opts = parser.parse_args(args[1:])

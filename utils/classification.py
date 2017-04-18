@@ -214,6 +214,33 @@ class classifier:
         prediction = np.argmax(logits, axis=1)
         return np.mean(0.0 + (prediction == truth))
     
+    def confusion_matrix(self, logits, truth):
+        prediction = np.argmax(logits, axis=1)
+        O = np.zeros((self.opts.num_class, self.opts.num_class))
+        for i in range(len(truth)):
+            O[truth[i], prediction[i]] += 1
+        return O
+    
+    def quadratic_kappa(self, logits, truth):
+        prediction = np.argmax(logits, axis=1)
+        t_vec = np.zeros((self.opts.num_class))
+        p_vec = np.zeros((self.opts.num_class))
+        O = np.zeros((self.opts.num_class, self.opts.num_class))
+        for i in range(len(truth)):
+            O[truth[i], prediction[i]] += 1
+            t_vec[truth[i]] += 1
+            p_vec[prediction[i]] += 1
+        W = np.zeros((self.opts.num_class, self.opts.num_class))
+        for i in range(self.opts.num_class):
+            for j in range(self.opts.num_class):
+                W[i,j] = ((i - j)**2) / ((self.opts.num_class - 1)**2)
+        E = np.outer(t_vec, p_vec)
+        O = O.astype(np.float32)
+        W = W.astype(np.float32)
+        E = np.sum(O) * E / np.sum(E)
+        kappa = 1 - np.sum(W * O) / np.sum(W * E)
+        return kappa
+    
     def super_graph(self, save=True, name='0'):
         self.plot_accuracy.cla()
         self.plot_loss.cla()
@@ -322,8 +349,8 @@ class classifier:
             except:
                 time.sleep(0.001)
         feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY, self.keep_prob:1.0}
-        loss, acc = self.sess.run((self.ce_loss, self.acc), feed_dict=feed)
-        return loss, acc
+        loss, acc, pred = self.sess.run((self.ce_loss, self.acc, self.pred), feed_dict=feed)
+        return loss, acc, pred, dataYY[0]
 
     def test_all(self, path_X):
         """
@@ -339,6 +366,8 @@ class classifier:
                 X_list.remove(name)
         acc_te  = 0.0
         loss_te = 0.0
+        preds = []
+        truths = []
         # Doing the testing.
         for iter_data in range(len(X_list)):
             # Reading in the data.
@@ -346,10 +375,12 @@ class classifier:
             files_data_iter = listdir(path_data_iter)
             for file_data in files_data_iter:
                 path_file = join(path_data_iter, file_data)
-                loss_iter_iter, acc_iter_iter = self.test_one_iter(path_file, name=file_data)
+                loss_iter_iter, acc_iter_iter,pred_iter_iter,truth_iter_iter = self.test_one_iter(path_file, name=file_data)
                 loss_te += loss_iter_iter / len(files_data_iter) / len(X_list)
                 acc_te += acc_iter_iter / len(files_data_iter) / len(X_list)
-        return loss_te, acc_te
+                preds.append(pred_iter_iter)
+                truths.append(truth_iter_iter)
+        return loss_te, acc_te, preds, truths
         
     
     def train_model(self):
@@ -386,10 +417,14 @@ class classifier:
                 loss_tr = 0.0
                 acc_tr = 0.0
                 if self.opts.path_validation:
-                    loss_val, acc_val = self.test_all(self.opts.path_validation)
+                    loss_val, acc_val,preds,truths = self.test_all(self.opts.path_validation)
                     self.val_loss.append(loss_val)
                     self.val_acc.append(acc_val)
                     statement += " Loss_val: " + str(loss_val)
+                    if self.opts.bool_kappa:
+                        statement += " Kappa: " + str(self.quadratic_kappa(preds, truths))
+                    if self.opts.bool_confusion:
+                        print self.confusion_matrix(preds, truths)
                 if self.opts.bool_display:
                     self.super_graph()
                 self.super_print(statement)
