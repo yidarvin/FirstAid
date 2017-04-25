@@ -193,7 +193,7 @@ class classifier:
         self.acc_multi = tf.add_n(acc_multi) / max(self.opts.num_gpu,1)
 
         self.init = tf.global_variables_initializer()
-        self.saver = tf.train.Saver(max_to_keep=None)
+        self.saver = tf.train.Saver(tf.trainable_variables(),max_to_keep=None)
 
         self.tr_acc = []
         self.tr_loss = []
@@ -237,8 +237,9 @@ class classifier:
         W = np.zeros((self.opts.num_class, self.opts.num_class))
         for i in range(self.opts.num_class):
             for j in range(self.opts.num_class):
-                W[i,j] = ((i - j)**2) / ((self.opts.num_class - 1)**2)
+                W[i,j] = ((float(i) - j)**2) / ((self.opts.num_class - 1)**2)
         E = np.outer(t_vec, p_vec)
+        E = E.astype(np.float32)
         O = O.astype(np.float32)
         W = W.astype(np.float32)
         E = np.sum(O) * E / np.sum(E)
@@ -404,11 +405,16 @@ class classifier:
         loss_tr = 0.0
         acc_tr = 0.0
         if self.opts.bool_load:
+            self.sess.run(self.init)
             self.saver.restore(self.sess, self.opts.path_model)
+            #optimizer_scope = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,'optimizer')
+            #print optimizer_scope
+            #self.sess.run(tf.variables_initializer(optimizer_scope))
         else:
             self.sess.run(self.init)
         # Training
         self.super_print("Let's start the training!")
+        loss_min = 1000000
         for iter in range(self.iter_count):
             loss_temp, acc_temp = self.train_one_iter(iter)
             loss_tr += loss_temp / self.print_every
@@ -435,10 +441,13 @@ class classifier:
                         statement += " Kappa: " + str(self.quadratic_kappa(preds, truths))
                     if self.opts.bool_confusion:
                         print self.confusion_matrix(preds, truths)
+                    if loss_val < loss_min:
+                        loss_min = loss_val
+                        self.saver.save(self.sess, self.opts.path_model)
                 if self.opts.bool_display:
                     self.super_graph()
                 self.super_print(statement)
-        if self.opts.path_model:
+        if (not self.opts.path_validation) and self.opts.path_model:
             self.saver.save(self.sess, self.opts.path_model)
                 
 

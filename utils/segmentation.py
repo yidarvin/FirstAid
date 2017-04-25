@@ -358,6 +358,7 @@ class segmentor:
             self.sess.run(self.init)
         # Training
         self.super_print("Let's start the training!")
+        loss_min = 1000000
         for iter in range(self.iter_count):
             loss_temp = self.train_one_iter(iter)
             loss_tr += loss_temp / self.print_every
@@ -374,8 +375,11 @@ class segmentor:
                     loss_val, iou_val = self.test_all(self.opts.path_validation)
                     statement += " Loss_val: " + str(loss_val)
                     statement += " IOU_val: " + str(iou_val)
+                    if loss_val < loss_min:
+                        loss_min = loss_val
+                        self.saver.save(self.sess, self.opts.path_model)
                 self.super_print(statement)
-        if self.opts.path_model:
+        if (not self.opts.path_validation) and self.opts.path_model:
             self.saver.save(self.sess, self.opts.path_model)
                 
 
@@ -410,7 +414,7 @@ class segmentor:
                 path_file = join(path_imgs, name_img)
                 mask = self.inference_one_iter(path_file)
                 h5f = h5py.File(path_file, 'a')
-                h5f.create_dataset('seg_pred', data=mask)
+                h5f.create_dataset('seg_'+self.opts.name, data=mask)
                 h5f.close()
             
             
