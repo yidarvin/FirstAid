@@ -158,8 +158,8 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     - name: (str) the name of the network
     """
     # Conv1
-    #layer = conv3d_bn_relu(layer, is_training, 7, 64, stride=2, name=name+"_conv1")
-    #layer = max_pool3d(layer, k=3, stride=2)
+    layer = conv3d_bn_relu(layer, is_training, 7, 64, stride=2, name=name+"_conv1")
+    layer = max_pool3d(layer, k=3, stride=2)
     # Conv2
     layer = conv3d_bn_relu(layer, is_training, 1, 64, name=name+"_conv2a")
     layer = conv3d_bn_relu(layer, is_training, 3, 192, name=name+"_conv2b")
@@ -171,7 +171,7 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     # Incept4
     layer = inceptionv1_module(layer, is_training, kSize=[192,96,208,16,48,64], name=name+"_incept4a")
     layer = inceptionv1_module(layer, is_training, kSize=[160,112,224,24,64,64], name=name+"_incept4b")
-    seg   = deconv3d_wo_bias(layer, 4, class_num, batch_size, name=name+"_incept4b_deconv")
+    seg   = deconv3d_wo_bias(layer, 16, class_num, batch_size, name=name+"_incept4b_deconv")
     layer = inceptionv1_module(layer, is_training, kSize=[128,128,256,24,64,64], name=name+"_incept4c")
     layer = inceptionv1_module(layer, is_training, kSize=[112,144,288,32,64,64], name=name+"_incept4d")
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept4e")
@@ -179,7 +179,7 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     # Incept5
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept5a")
     layer = inceptionv1_module(layer, is_training, kSize=[384,192,384,48,128,128], name=name+"_incept5b")
-    seg   += deconv3d_w_bias(layer, 8, class_num, batch_size, name=name+"_incept5b_deconv")
+    seg   += deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_incept5b_deconv")
     return seg + 1e-12
 
 def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_Net"):
