@@ -27,6 +27,11 @@ def get_L1_loss(reg_param, key="l1_variables"):
         L1_loss += reg_param * tf.reduce_sum(tf.abs(W))
     return L1_loss
 
+def get_seg_loss_weighted(logits, labels, num_class):
+    logits = tf.reshape(logits, [-1, num_class])
+    labels = tf.reshape(labels, [-1])
+    return 0
+
 def get_seg_loss(logits, labels, num_class):
     logits = tf.reshape(logits, [-1, num_class])
     labels = tf.reshape(labels, [-1])

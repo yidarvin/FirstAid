@@ -203,7 +203,7 @@ def conv3d_w_bias(layer, filt_size, filt_num, stride=1, mid_size=0, name="conv2d
     layer = tf.nn.bias_add(layer, B)
     return layer
 
-def batch_norm(layer, is_training, beta=0.0, gamma=1.0, decay=0.9, stddev=0.002, name="bn"):
+def batch_norm(layer, is_training, beta=0.0, gamma=1.0, decay=0.999, stddev=0.002, name="bn"):
     """
     Does batch normalization.
     Heavily based off of the code from tflearn.
