@@ -181,7 +181,7 @@ def conv2d_w_bias(layer, filt_size, filt_num, stride=1, name="conv2d_w_bias"):
     layer = tf.nn.bias_add(layer, B)
     return layer
 
-def conv3d_w_bias(layer, filt_size, filt_num, stride=1, mid_size, name="conv2d_w_bias"):
+def conv3d_w_bias(layer, filt_size, filt_num, stride=1, mid_size=0, name="conv2d_w_bias"):
     """
     A simple 2-dimensional convolution layer.
     Layer Architecture: 2d-convolution

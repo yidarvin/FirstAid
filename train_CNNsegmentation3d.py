@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from utils.segmentation import segmentor
+from utils.segmentation3d import segmentor
 
 def main(args):
     """
