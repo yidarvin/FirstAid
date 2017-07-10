@@ -37,23 +37,28 @@ def deconv3d_wo_bias(layer, stride, class_num, batch_size, mid_size=32, name="de
     NOTE: we force this convolution to be separated by dimension.
     """
     _,m,n,s,c = layer.get_shape().as_list()
-    weight_shape_0 = [stride*2, 1, 1, mid_size, c]
-    weight_shape_1 = [1, stride*2, 1, mid_size, mid_size]
-    weight_shape_2 = [1, 1, stride*2, class_num, mid_size]
+    weight_shape = [stride*2, stride*2, stride*2, class_num, c]
+    #weight_shape_0 = [stride*2, 1, 1, mid_size, c]
+    #weight_shape_1 = [1, stride*2, 1, mid_size, mid_size]
+    #weight_shape_2 = [1, 1, stride*2, class_num, mid_size]
     with tf.device("/cpu:0"):
         with tf.variable_scope(name+"_param"):
-            W0 = tf.get_variable("W0", weight_shape_0,
-                                 initializer=tf.random_normal_initializer(stddev=0.01))
-            W1 = tf.get_variable("W1", weight_shape_1,
-                                 initializer=tf.random_normal_initializer(stddev=0.01))
-            W2 = tf.get_variable("W2", weight_shape_2,
-                                 initializer=tf.random_normal_initializer(stddev=0.01))
-    layer = tf.nn.conv3d_transpose(layer, W0, [batch_size, m*stride, n, s, mid_size],
-                                   strides=[1,stride,1,1,1], padding='SAME')
-    layer = tf.nn.conv3d_transpose(layer, W1, [batch_size, m*stride, n*stride, s, mid_size],
-                                   strides=[1,1,stride,1,1], padding='SAME')
-    layer = tf.nn.conv3d_transpose(layer, W2, [batch_size, m*stride, n*stride, s*stride, class_num],
-                                   strides=[1,1,1,stride,1], padding='SAME')
+            W = tf.get_variable("W", weight_shape,
+                                initializer=tf.random_normal_initializer(stddev=0.01))
+            #W0 = tf.get_variable("W0", weight_shape_0,
+            #                     initializer=tf.random_normal_initializer(stddev=0.01))
+            #W1 = tf.get_variable("W1", weight_shape_1,
+            #                     initializer=tf.random_normal_initializer(stddev=0.01))
+            #W2 = tf.get_variable("W2", weight_shape_2,
+            #                     initializer=tf.random_normal_initializer(stddev=0.01))
+    layer = tf.nn.conv3d_transpose(layer, W, [batch_size, m*stride, n*stride, s*stride, class_num],
+                                   strides=[1,stride,stride,stride,1], padding='SAME')
+    #layer = tf.nn.conv3d_transpose(layer, W0, [batch_size, m*stride, n, s, mid_size],
+    #                               strides=[1,stride,1,1,1], padding='SAME')
+    #layer = tf.nn.conv3d_transpose(layer, W1, [batch_size, m*stride, n*stride, s, mid_size],
+    #                               strides=[1,1,stride,1,1], padding='SAME')
+    #layer = tf.nn.conv3d_transpose(layer, W2, [batch_size, m*stride, n*stride, s*stride, class_num],
+    #                               strides=[1,1,1,stride,1], padding='SAME')
     return layer
 
 def deconv2d_w_bias(layer, stride, class_num, batch_size, name="deconv2d_w_bias"):
@@ -140,24 +145,29 @@ def conv3d_wo_bias(layer, filt_size, filt_num, stride=1, mid_size=0, name="conv2
     input_size = layer.get_shape().as_list()
     if not isinstance(filt_size, list):
         filt_size = [filt_size, filt_size, filt_size]
+    weight_shape = [filt_size[0], filt_size[1], filt_size[2], input_size[4], mid_size]
     weight_shape_0 = [filt_size[0], 1, 1, input_size[4], mid_size]
     weight_shape_1 = [1, filt_size[1], 1, mid_size, mid_size]
     weight_shape_2 = [1, 1, filt_size[2], mid_size, filt_num]
     std = 0.01#np.sqrt(2.0 / (filt_size[0] * filt_size[0] * input_size[3]))
     with tf.device("/cpu:0"):
       with tf.variable_scope(name+"_param"):
-        W0 = tf.get_variable("W0", weight_shape_0,
-                             initializer=tf.random_normal_initializer(stddev=std))
-        W1 = tf.get_variable("W1", weight_shape_1,
-                             initializer=tf.random_normal_initializer(stddev=std))
-        W2 = tf.get_variable("W2", weight_shape_2,
-                             initializer=tf.random_normal_initializer(stddev=std))
-    tf.add_to_collection("reg_variables", W0)
-    tf.add_to_collection("reg_variables", W1)
-    tf.add_to_collection("reg_variables", W2)
-    layer = tf.nn.conv3d(layer, W0, strides=[1, stride, 1, 1, 1], padding='SAME')
-    layer = tf.nn.conv3d(layer, W1, strides=[1, 1, stride, 1, 1], padding='SAME')
-    layer = tf.nn.conv3d(layer, W2, strides=[1, 1, 1, stride, 1], padding='SAME')
+        W = tf.get_variable("W", weight_shape,
+                            initializer=tf.random_normal_initializer(stddev=std))
+        #W0 = tf.get_variable("W0", weight_shape_0,
+        #                     initializer=tf.random_normal_initializer(stddev=std))
+        #W1 = tf.get_variable("W1", weight_shape_1,
+        #                     initializer=tf.random_normal_initializer(stddev=std))
+        #W2 = tf.get_variable("W2", weight_shape_2,
+        #                     initializer=tf.random_normal_initializer(stddev=std))
+    #tf.add_to_collection("reg_variables", W0)
+    #tf.add_to_collection("reg_variables", W1)
+    #tf.add_to_collection("reg_variables", W2)
+    tf.add_to_collection("reg_variables", W)
+    layer = tf.nn.conv3d(layer, W, stides=[1,stride,stride,stride,1], padding='SAME')
+    #layer = tf.nn.conv3d(layer, W0, strides=[1, stride, 1, 1, 1], padding='SAME')
+    #layer = tf.nn.conv3d(layer, W1, strides=[1, 1, stride, 1, 1], padding='SAME')
+    #layer = tf.nn.conv3d(layer, W2, strides=[1, 1, 1, stride, 1], padding='SAME')
     return layer
 
 def conv2d_w_bias(layer, filt_size, filt_num, stride=1, name="conv2d_w_bias"):
