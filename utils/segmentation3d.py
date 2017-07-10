@@ -264,7 +264,7 @@ class segmentor:
             except:
                 print 'Failed: ' + join(self.opts.path_train, self.X_tr[ind], img_filename)
                 continue
-            data_iter, data_seg = data_augment3d(data_iter, data_seg)
+            #data_iter, data_seg = data_augment3d(data_iter, data_seg)
             self.dataXX[iter_data,:,:,:,:] = data_iter
             self.dataYY[iter_data,:,:,:]   = data_seg
         feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY}
