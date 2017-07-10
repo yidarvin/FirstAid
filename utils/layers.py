@@ -39,7 +39,7 @@ def deconv3d_wo_bias(layer, stride, class_num, batch_size, mid_num=32, name="dec
     _,m,n,s,c = layer.get_shape().as_list()
     weight_shape_0 = [stride*2, 1, 1, mid_num, c]
     weight_shape_1 = [1, stride*2, 1, mid_num, mid_num]
-    weight_shape_2 = [1, 1, stride*2, mid_num, class_num]
+    weight_shape_2 = [1, 1, stride*2, class_num, mid_num]
     with tf.device("/cpu:0"):
         with tf.variable_scope(name+"_param"):
             W0 = tf.get_variable("W0", weight_shape_0,
@@ -53,7 +53,7 @@ def deconv3d_wo_bias(layer, stride, class_num, batch_size, mid_num=32, name="dec
     layer = tf.nn.conv3d_transpose(layer, W1, [batch_size, m*stride, n*stride, s, mid_num],
                                    strides=[1,1,stride,1,1], padding='SAME')
     layer = tf.nn.conv3d_transpose(layer, W2, [batch_size, m*stride, n*stride, s*stride, class_num],
-                                   strides=[1,1,1,stride,1], padding='SAME')
+                                   strides=[1], padding='SAME')
     return layer
 
 def deconv2d_w_bias(layer, stride, class_num, batch_size, name="deconv2d_w_bias"):
