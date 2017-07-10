@@ -13,7 +13,7 @@ import sys
 import time
 
 from layers import *
-from nets_segmentationed import *
+from nets_segmentation3d import *
 from data import *
 from ops import *
 
