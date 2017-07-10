@@ -193,12 +193,12 @@ class segmentor:
         self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
 
     def average_iou(self, pred, truth):
-        img_pred = np.argmax(pred, axis=2)
+        img_pred = np.argmax(pred, axis=3)
         iou = 0.0
-        for i in range(pred.shape[2]):
+        for i in range(pred.shape[-1]):
             intersection = np.sum((img_pred == i) & (truth == i))
             union = np.sum((img_pred == i) | (truth == i))
-            iou += float(intersection) / float(union) / pred.shape[2]
+            iou += float(intersection) / float(union) / pred.shape[-1]
         return iou
     
     def super_colormap(self, img, cmap):
