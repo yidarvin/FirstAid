@@ -53,7 +53,7 @@ def deconv3d_wo_bias(layer, stride, class_num, batch_size, mid_num=32, name="dec
     layer = tf.nn.conv3d_transpose(layer, W1, [batch_size, m*stride, n*stride, s, mid_num],
                                    strides=[1,1,stride,1,1], padding='SAME')
     layer = tf.nn.conv3d_transpose(layer, W2, [batch_size, m*stride, n*stride, s*stride, class_num],
-                                   strides=[1], padding='SAME')
+                                   strides=[1,1,1,stride,1], padding='SAME')
     return layer
 
 def deconv2d_w_bias(layer, stride, class_num, batch_size, name="deconv2d_w_bias"):
