@@ -198,7 +198,7 @@ class segmentor:
         for i in range(pred.shape[-1]):
             intersection = np.sum((img_pred == i) & (truth == i))
             union = np.sum((img_pred == i) | (truth == i))
-            iou += float(intersection) / float(union) / pred.shape[-1]
+            iou += float(intersection) / float(union + 1) / pred.shape[-1]
         return iou
     
     def super_colormap(self, img, cmap):
