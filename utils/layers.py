@@ -164,7 +164,7 @@ def conv3d_wo_bias(layer, filt_size, filt_num, stride=1, mid_size=0, name="conv2
     #tf.add_to_collection("reg_variables", W1)
     #tf.add_to_collection("reg_variables", W2)
     tf.add_to_collection("reg_variables", W)
-    layer = tf.nn.conv3d(layer, W, stides=[1,stride,stride,stride,1], padding='SAME')
+    layer = tf.nn.conv3d(layer, W, strides=[1,stride,stride,stride,1], padding='SAME')
     #layer = tf.nn.conv3d(layer, W0, strides=[1, stride, 1, 1, 1], padding='SAME')
     #layer = tf.nn.conv3d(layer, W1, strides=[1, 1, stride, 1, 1], padding='SAME')
     #layer = tf.nn.conv3d(layer, W2, strides=[1, 1, 1, stride, 1], padding='SAME')
