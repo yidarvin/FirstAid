@@ -180,7 +180,7 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept5a")
     layer = inceptionv1_module(layer, is_training, kSize=[384,192,384,48,128,128], name=name+"_incept5b")
     seg   += deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_incept5b_deconv")
-    return seg
+    return seg + 1e-12
 
 def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_Net"):
     """
@@ -328,7 +328,7 @@ def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_N
     branchpool = conv2d_bn_relu(branchpool, is_training, 1, 192, name=name+'_inceptBbranchpool')
     layer = tf.concat([branch1, branch3a, branch3b, branchpool], 3)
     seg   += deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_inceptB_deconv")
-    return seg
+    return seg + 1e-12
 
 def conv_res(layer, is_training, architecture=[[1, 64], [3, 64], [1, 256]], alpha=0.1, name="conv_res"):
     """
