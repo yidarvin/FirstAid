@@ -268,7 +268,7 @@ def conv2d_bn_relu(layer, is_training, filt_size, filt_num, stride=1, alpha=0.0,
         layer = tf.maximum(layer, layer*alpha)
     return layer
 
-def conv2d_bn_relu(layer, is_training, filt_size, filt_num, stride=1, mid_size=0, alpha=0.0, name="conv2d_bn_relu"):
+def conv3d_bn_relu(layer, is_training, filt_size, filt_num, stride=1, mid_size=0, alpha=0.0, name="conv2d_bn_relu"):
     """
     A simple 3-dimensional convolution layer.
     Layer Architecture: 3d-convolution - batch_norm - reLU
