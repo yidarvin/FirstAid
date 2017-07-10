@@ -13,7 +13,7 @@ import sys
 import time
 
 from layers import *
-from nets_segmentation import *
+from nets_segmentationed import *
 from data import *
 from ops import *
 
@@ -103,12 +103,12 @@ class segmentor:
         elif self.opts.path_inference:
             self.matrix_size, self.num_channels = find_data_shape(self.opts.path_inference)
         else:
-            self.matrix_size, self.num_channels = 512,1
-        xTe_size = [1, self.matrix_size, self.matrix_size, self.num_channels]
-        yTe_size = [1, self.matrix_size, self.matrix_size]
+            self.matrix_size, self.num_channels = 64,1
+        xTe_size = [1, self.matrix_size, self.matrix_size, self.matrix_size, self.num_channels]
+        yTe_size = [1, self.matrix_size, self.matrix_size, self.matrix_size]
         each_bs  = self.opts.batch_size
-        xTr_size = [each_bs, self.matrix_size, self.matrix_size, self.num_channels]
-        yTr_size = [each_bs, self.matrix_size, self.matrix_size]
+        xTr_size = [each_bs, self.matrix_size, self.matrix_size, self.matrix_size, self.num_channels]
+        yTr_size = [each_bs, self.matrix_size, self.matrix_size, self.matrix_size]
         self.xTe = tf.placeholder(tf.float32, xTe_size)
         self.yTe = tf.placeholder(tf.int64, yTe_size)
         self.xTr = tf.placeholder(tf.float32, xTr_size)
@@ -265,12 +265,13 @@ class segmentor:
                 print 'Failed: ' + join(self.opts.path_train, self.X_tr[ind], img_filename)
                 continue
             data_iter, data_seg = data_augment(data_iter, data_seg)
-            self.dataXX[iter_data,:,:,:] = data_iter
-            self.dataYY[iter_data,:,:]   = data_seg
+            self.dataXX[iter_data,:,:,:,:] = data_iter
+            self.dataYY[iter_data,:,:,:]   = data_seg
         feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY}
         _, loss_iter,seg_example = self.sess.run((self.optimizer, self.loss_multi, self.segmentation_example), feed_dict=feed)
+        slice_num = self.dataXX.shape[3]/2
         if self.opts.bool_display:
-            self.super_graph_seg(self.dataXX[0,:,:,0], seg_example[:,:,1], self.dataYY[0,:,:])
+            self.super_graph_seg(self.dataXX[0,:,:,slice_num,0], seg_example[:,:,slice_num,1], self.dataYY[0,:,:,slice_num])
         return loss_iter
 
     def inference_one_iter(self, path_file):
@@ -280,20 +281,21 @@ class segmentor:
         - self: (object)
         - path_file: (str) path of the file to inference.
         """
-        dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
+        dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.matrix_size, self.num_channels))
         try:
             with h5py.File(path_file) as hf:
-                dataXX[0,:,:,:] = np.array(hf.get('data'))
+                dataXX[0,:,:,:,:] = np.array(hf.get('data'))
         except:
             print 'Failed: ' + path_file
         feed = {self.xTe:dataXX, self.is_training:0}
-        img = dataXX[0,:,:,0]
+        slice_num = self.dataXX.shape[3]/2
+        img = dataXX[0,:,:,slice_num,0]
         mask = self.sess.run((self.prob), feed_dict=feed)
         mask = mask[0]
-        mask = mask[:,:,1]
+        mask = mask[:,:,:,1]
         rand = np.random.rand(mask.shape[0], mask.shape[1])
         if self.opts.bool_display:
-            self.super_graph_seg(img, mask, rand)
+            self.super_graph_seg(img, mask[:,:,slice_num, 0], rand)
         return mask
 
     def test_one_iter(self, path_file, name='0'):
@@ -303,19 +305,20 @@ class segmentor:
         - self: (object)
         - path_file: (str) path of the file to inference.
         """
-        dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.num_channels))
-        dataYY = np.zeros((1, self.matrix_size, self.matrix_size))
+        dataXX = np.zeros((1, self.matrix_size, self.matrix_size, self.matrix_size, self.num_channels))
+        dataYY = np.zeros((1, self.matrix_size, self.matrix_size, self.matrix_size))
         try:
             with h5py.File(path_file) as hf:
-                dataXX[0,:,:,:] = np.array(hf.get('data'))
-                dataYY[0,:,:]   = np.array(hf.get('seg'))
+                dataXX[0,:,:,:,:] = np.array(hf.get('data'))
+                dataYY[0,:,:,:]   = np.array(hf.get('seg'))
         except:
             print 'Failed: ' + path_file
         feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY}
         seg_loss, pred = self.sess.run((self.seg_loss, self.pred), feed_dict=feed)
         iou = self.average_iou(pred[0], dataYY[0])
+        slice_num = self.dataXX.shape[3]/2
         if self.opts.bool_display:
-            self.super_graph_seg(dataXX[0,:,:,0], pred[0,:,:,1], dataYY[0,:,:],
+            self.super_graph_seg(dataXX[0,:,:,slice_num,0], pred[0,:,:,slice_num,1], dataYY[0,:,:,slice_num],
                                  save=True, name=name)
         return seg_loss, iou
 

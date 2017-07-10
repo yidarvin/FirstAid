@@ -36,7 +36,7 @@ def find_data_shape(path_data):
                 with h5py.File(path_file) as hf:
                     img = np.array(hf.get('data'))
                     matrix_size = img.shape[0]
-                    num_channels = img.shape[2]
+                    num_channels = img.shape[-1]
             except:
                 statement += path_file + ' is not valid.\n'
             if matrix_size != 0:

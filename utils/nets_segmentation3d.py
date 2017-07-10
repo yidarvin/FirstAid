@@ -16,11 +16,11 @@ def general_conv(layer, is_training, architecture_conv, name="general_conv"):
     """
     for conv_iter, conv_numbers in enumerate(architecture_conv):
         if conv_numbers[0]==0:
-            layer = max_pool(layer, k=conv_numbers[1])
+            layer = max_pool3d(layer, k=conv_numbers[1])
         else:
             if len(conv_numbers)==2:
                 conv_numbers.append(1)
-            layer = conv2d_bn_relu(layer, is_training, conv_numbers[0], conv_numbers[1], stride=conv_numbers[2],
+            layer = conv3d_bn_relu(layer, is_training, conv_numbers[0], conv_numbers[1], stride=conv_numbers[2],
                            name=(name+"_conv"+str(conv_iter)))
     return layer
 
@@ -37,7 +37,7 @@ def Le_Net(layer, is_training, class_num, batch_size, name="Le_Net"):
     architecture_conv = [[5,6],[0,2],
                          [5,16],[0,2]]
     layer = general_conv(layer, is_training, architecture_conv, name=name)
-    layer = deconv2d_w_bias(layer, 4, class_num, batch_size, name=name+"_deconv")
+    layer = deconv3d_w_bias(layer, 4, class_num, batch_size, name=name+"_deconv")
     return layer
 
 def Alex_Net(layer, is_training, class_num, batch_size, name="Alex_Net"):
@@ -54,7 +54,7 @@ def Alex_Net(layer, is_training, class_num, batch_size, name="Alex_Net"):
                          [11,256],[0,2],
                          [3,384],[3,384],[3,256],[0,2]]
     layer = general_conv(layer, is_training, architecture_conv, name=name)
-    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    layer = deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
     return layer
 
 def VGG11_Net(layer, is_training, class_num, batch_size, name="VGG11_Net"):
@@ -72,7 +72,7 @@ def VGG11_Net(layer, is_training, class_num, batch_size, name="VGG11_Net"):
                          [3,512],[3,512],[0,2],
                          [3,512],[3,512],[0,2]]
     layer = general_conv(layer, is_training, architecture_conv, name=name)
-    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    layer = deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
     return layer
 
 def VGG13_Net(layer, is_training, class_num, batch_size, name="VGG13_Net"):
@@ -90,7 +90,7 @@ def VGG13_Net(layer, is_training, class_num, batch_size, name="VGG13_Net"):
                          [3,512],[3,512],[0,2],
                          [3,512],[3,512],[0,2]]
     layer = general_conv(layer, is_training, architecture_conv, name=name)
-    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    layer = deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
     return layer
 
 def VGG16_Net(layer, is_training, class_num, batch_size, name="VGG16_Net"):
@@ -108,7 +108,7 @@ def VGG16_Net(layer, is_training, class_num, batch_size, name="VGG16_Net"):
                          [3,512],[3,512],[3,512],[0,2],
                          [3,512],[3,512],[3,512],[0,2]]
     layer = general_conv(layer, is_training, architecture_conv, name=name)
-    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    layer = deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
     return layer
 
 def VGG19_Net(layer, is_training, class_num, batch_size, name="VGG19_Net"):
@@ -126,7 +126,7 @@ def VGG19_Net(layer, is_training, class_num, batch_size, name="VGG19_Net"):
                          [3,512],[3,512],[3,512],[3,512],[0,2],
                          [3,512],[3,512],[3,512],[3,512],[0,2]]
     layer = general_conv(layer, is_training, architecture_conv, name=name)
-    layer = deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
+    layer = deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_deconv")
     return layer
 
 def inceptionv1_module(layer, is_training, kSize=[16,16,16,16,16,16], name="inceptionv1_module"):
@@ -138,14 +138,14 @@ def inceptionv1_module(layer, is_training, kSize=[16,16,16,16,16,16], name="ince
     - ksize: (array (6,)) [1x1, 3x3reduce, 3x3, 5x5reduce, 5x5, poolproj]
     - name: (string) name of incept layer
     """
-    layer_1x1 = conv2d_bn_relu(layer, is_training, 1, kSize[0], name=(name+"_1x1"))
-    layer_3x3a = conv2d_bn_relu(layer, is_training, 1, kSize[1], name=(name+"_3x3a"))
-    layer_3x3b = conv2d_bn_relu(layer_3x3a, is_training, 3, kSize[2], name=(name+"_3x3b"))
-    layer_5x5a = conv2d_bn_relu(layer, is_training, 1, kSize[3], name=(name+"_5x5a"))
-    layer_5x5b = conv2d_bn_relu(layer_5x5a, is_training, 5, kSize[4], name=(name+"_5x5b"))
-    layer_poola = max_pool(layer, k=3, stride=1)
-    layer_poolb = conv2d_bn_relu(layer_poola, is_training, 1, kSize[5], name=(name+"_poolb"))
-    return tf.concat([layer_1x1, layer_3x3b, layer_5x5b, layer_poolb], 3)
+    layer_1x1 = conv3d_bn_relu(layer, is_training, 1, kSize[0], name=(name+"_1x1"))
+    layer_3x3a = conv3d_bn_relu(layer, is_training, 1, kSize[1], name=(name+"_3x3a"))
+    layer_3x3b = conv3d_bn_relu(layer_3x3a, is_training, 3, kSize[2], name=(name+"_3x3b"))
+    layer_5x5a = conv3d_bn_relu(layer, is_training, 1, kSize[3], name=(name+"_5x5a"))
+    layer_5x5b = conv3d_bn_relu(layer_5x5a, is_training, 5, kSize[4], name=(name+"_5x5b"))
+    layer_poola = max_pool3d(layer, k=3, stride=1)
+    layer_poolb = conv3d_bn_relu(layer_poola, is_training, 1, kSize[5], name=(name+"_poolb"))
+    return tf.concat([layer_1x1, layer_3x3b, layer_5x5b, layer_poolb], 4)
 
 def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     """
@@ -158,28 +158,28 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     - name: (str) the name of the network
     """
     # Conv1
-    layer = conv2d_bn_relu(layer, is_training, 7, 64, stride=2, name=name+"_conv1")
-    layer = max_pool(layer, k=3, stride=2)
+    layer = conv3d_bn_relu(layer, is_training, 7, 64, stride=2, name=name+"_conv1")
+    layer = max_pool3d(layer, k=3, stride=2)
     # Conv2
-    layer = conv2d_bn_relu(layer, is_training, 1, 64, name=name+"_conv2a")
-    layer = conv2d_bn_relu(layer, is_training, 3, 192, name=name+"_conv2b")
-    layer = max_pool(layer, k=3, stride=2)
+    layer = conv3d_bn_relu(layer, is_training, 1, 64, name=name+"_conv2a")
+    layer = conv3d_bn_relu(layer, is_training, 3, 192, name=name+"_conv2b")
+    layer = max_pool3d(layer, k=3, stride=2)
     # Incept3
     layer = inceptionv1_module(layer, is_training, kSize=[64,96,128,16,32,32], name=name+"_incept3a")
     layer = inceptionv1_module(layer, is_training, kSize=[128,128,192,32,96,64], name=name+"_incept3b")
-    layer = max_pool(layer, k=3, stride=2)
+    layer = max_pool3d(layer, k=3, stride=2)
     # Incept4
     layer = inceptionv1_module(layer, is_training, kSize=[192,96,208,16,48,64], name=name+"_incept4a")
     layer = inceptionv1_module(layer, is_training, kSize=[160,112,224,24,64,64], name=name+"_incept4b")
-    seg   = deconv2d_wo_bias(layer, 16, class_num, batch_size, name=name+"_incept4b_deconv")
+    seg   = deconv3d_wo_bias(layer, 16, class_num, batch_size, name=name+"_incept4b_deconv")
     layer = inceptionv1_module(layer, is_training, kSize=[128,128,256,24,64,64], name=name+"_incept4c")
     layer = inceptionv1_module(layer, is_training, kSize=[112,144,288,32,64,64], name=name+"_incept4d")
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept4e")
-    layer = max_pool(layer, k=3, stride=2)
+    layer = max_pool3d(layer, k=3, stride=2)
     # Incept5
     layer = inceptionv1_module(layer, is_training, kSize=[256,160,320,32,128,128], name=name+"_incept5a")
     layer = inceptionv1_module(layer, is_training, kSize=[384,192,384,48,128,128], name=name+"_incept5b")
-    seg   += deconv2d_w_bias(layer, 32, class_num, batch_size, name=name+"_incept5b_deconv")
+    seg   += deconv3d_w_bias(layer, 32, class_num, batch_size, name=name+"_incept5b_deconv")
     return seg
 
 def Inception_Net(layer, is_training, class_num, batch_size, name="Inceptionv3_Net"):
