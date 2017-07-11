@@ -35,7 +35,10 @@ def get_seg_loss_weighted(logits, labels, num_class):
 def get_seg_loss(logits, labels, num_class):
     logits = tf.reshape(logits, [-1, num_class])
     labels = tf.reshape(labels, [-1])
-    return tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+    pos_weight = 1.0 + 9.0*tf.cast(labels,dtype=tf.float32)
+    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels)
+    loss *= pos_weight
+    return tf.reduce_mean(loss)
 
 def get_ce_loss(logits, labels):
     return tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
