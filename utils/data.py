@@ -138,6 +138,6 @@ def data_augment3d(data_iter, data_seg=None, rand_seed=None):
     #data_iter = data_iter ** pow_rand
     # Random adding of shade.
     data_iter += add_rand
-    if np.any(data_seg):
+    if data_seg is not None:
         return data_iter, data_seg
     return data_iter

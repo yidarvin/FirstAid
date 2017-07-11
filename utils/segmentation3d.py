@@ -295,7 +295,7 @@ class segmentor:
         mask = mask[:,:,:,1]
         rand = np.random.rand(mask.shape[0], mask.shape[1])
         if self.opts.bool_display:
-            self.super_graph_seg(img, mask[:,:,slice_num, 0], rand)
+            self.super_graph_seg(img, mask[:,:,slice_num], rand)
         return mask
 
     def test_one_iter(self, path_file, name='0'):
