@@ -269,7 +269,12 @@ class segmentor:
             self.dataYY[iter_data,:,:,:]   = data_seg
         feed = {self.xTr:self.dataXX, self.is_training:1, self.yTr:self.dataYY}
         _, loss_iter,seg_example = self.sess.run((self.optimizer, self.loss_multi, self.segmentation_example), feed_dict=feed)
-        slice_num = self.dataXX.shape[3]/2
+        
+        vol_seg = np.squeeze(self.dataYY[0,:,:,:].copy())
+        seg_sum = np.sum(vol_seg, axis=0)
+        seg_sum = np.sum(seg_sum, axis=0)
+        slice_num = np.random.choice(np.where(seg_sum == np.max(seg_sum))[0])
+        
         if self.opts.bool_display:
             self.super_graph_seg(self.dataXX[0,:,:,slice_num,0], seg_example[:,:,slice_num,1], self.dataYY[0,:,:,slice_num])
         return loss_iter
@@ -316,7 +321,12 @@ class segmentor:
         feed = {self.xTe:dataXX, self.is_training:0, self.yTe:dataYY}
         seg_loss, pred = self.sess.run((self.seg_loss, self.pred), feed_dict=feed)
         iou = self.average_iou(pred[0], dataYY[0])
-        slice_num = self.dataXX.shape[3]/2
+        
+        vol_seg = np.squeeze(dataYY[0,:,:,:].copy())
+        seg_sum = np.sum(vol_seg, axis=0)
+        seg_sum = np.sum(seg_sum, axis=0)
+        slice_num = np.random.choice(np.where(seg_sum == np.max(seg_sum))[0])
+        
         if self.opts.bool_display:
             self.super_graph_seg(dataXX[0,:,:,slice_num,0], pred[0,:,:,slice_num,1], dataYY[0,:,:,slice_num],
                                  save=True, name=name)
