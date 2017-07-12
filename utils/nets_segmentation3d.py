@@ -159,11 +159,11 @@ def GoogLe_Net(layer, is_training, class_num, batch_size, name="GoogLe_Net"):
     """
     # Conv1
     layer = conv3d_bn_relu(layer, is_training, 7, 64, stride=2, name=name+"_conv1")
-    layer = max_pool3d(layer, k=3, stride=2)
+    #layer = max_pool3d(layer, k=3, stride=2)
     # Conv2
     layer = conv3d_bn_relu(layer, is_training, 1, 64, name=name+"_conv2a")
     layer = conv3d_bn_relu(layer, is_training, 3, 192, name=name+"_conv2b")
-    #layer = max_pool3d(layer, k=3, stride=2)
+    layer = max_pool3d(layer, k=3, stride=2)
     # Incept3
     layer = inceptionv1_module(layer, is_training, kSize=[64,96,128,16,32,32], name=name+"_incept3a")
     layer = inceptionv1_module(layer, is_training, kSize=[128,128,192,32,96,64], name=name+"_incept3b")
